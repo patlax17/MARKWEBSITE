@@ -1,13 +1,10 @@
-import Sidebar from '../components/Sidebar'
-import MobileNav from '../components/MobileNav'
+import TopHeader from '../components/TopHeader'
 
 export default function About() {
   return (
     <>
-      <Sidebar />
-      <MobileNav />
-
-      <div className="md:ml-44 pt-24 md:pt-16 px-8 md:px-16 pb-20 max-w-2xl">
+      <TopHeader />
+      <main className="pt-28 md:pt-24 px-8 md:px-16 pb-20 max-w-2xl">
         <p className="text-xs tracking-widest uppercase font-light text-black opacity-40 mb-10">
           About
         </p>
@@ -38,32 +35,17 @@ export default function About() {
         </div>
 
         <div className="mt-14 flex flex-col gap-3">
-          <a
-            href="https://www.instagram.com/markshotthis/"
-            target="_blank"
-            rel="noreferrer"
-            className="nav-link"
-          >
+          <a href="https://www.instagram.com/markshotthis/" target="_blank" rel="noreferrer" className="nav-link">
             Instagram — @markshotthis
           </a>
-          <a
-            href="https://www.tiktok.com/@whatidowhenidonthoop"
-            target="_blank"
-            rel="noreferrer"
-            className="nav-link"
-          >
+          <a href="https://www.tiktok.com/@whatidowhenidonthoop" target="_blank" rel="noreferrer" className="nav-link">
             TikTok — @whatidowhenidonthoop
           </a>
-          <a
-            href="https://www.linkedin.com/in/mark-militar-42634b376/"
-            target="_blank"
-            rel="noreferrer"
-            className="nav-link"
-          >
+          <a href="https://www.linkedin.com/in/mark-militar-42634b376/" target="_blank" rel="noreferrer" className="nav-link">
             LinkedIn — Mark Militar
           </a>
         </div>
-      </div>
+      </main>
     </>
   )
 }

@@ -1,9 +1,7 @@
 import { useState, useCallback } from 'react'
-import Sidebar from '../components/Sidebar'
-import MobileNav from '../components/MobileNav'
+import TopHeader from '../components/TopHeader'
 import Lightbox from '../components/Lightbox'
 
-// All 84 portfolio images
 const IMAGE_FILES = [
   'DSC07282-5.JPG','DSC07472-9.JPG','DSC07530-13.JPG','DSC07585-16.JPG',
   'DSC07730 2.jpg','DSC07957-6.jpg','DSC08027 2.jpg','DSC08242-11.jpg',
@@ -34,7 +32,6 @@ const IMAGES = IMAGE_FILES.map(f => `/portfolio/${f}`)
 
 function MasonryImage({ src, index, onClick }) {
   const [loaded, setLoaded] = useState(false)
-
   return (
     <div className="masonry-item" onClick={() => onClick(index)}>
       <img
@@ -53,28 +50,19 @@ export default function Work() {
 
   const openLightbox = useCallback((i) => setLightboxIndex(i), [])
   const closeLightbox = useCallback(() => setLightboxIndex(null), [])
-  const prevImage = useCallback(() =>
-    setLightboxIndex(i => (i > 0 ? i - 1 : i)), [])
-  const nextImage = useCallback(() =>
-    setLightboxIndex(i => (i < IMAGES.length - 1 ? i + 1 : i)), [])
+  const prevImage = useCallback(() => setLightboxIndex(i => (i > 0 ? i - 1 : i)), [])
+  const nextImage = useCallback(() => setLightboxIndex(i => (i < IMAGES.length - 1 ? i + 1 : i)), [])
 
   return (
     <>
-      <Sidebar />
-      <MobileNav />
-
-      <div className="md:ml-44 pt-16 md:pt-6 px-1.5 md:px-2 pb-8">
+      <TopHeader />
+      <main className="pt-16 px-1.5 md:px-2 pb-8">
         <div className="masonry-grid">
           {IMAGES.map((src, i) => (
-            <MasonryImage
-              key={src}
-              src={src}
-              index={i}
-              onClick={openLightbox}
-            />
+            <MasonryImage key={src} src={src} index={i} onClick={openLightbox} />
           ))}
         </div>
-      </div>
+      </main>
 
       {lightboxIndex !== null && (
         <Lightbox

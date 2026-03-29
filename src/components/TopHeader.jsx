@@ -1,20 +1,26 @@
 import { NavLink } from 'react-router-dom'
 import { useState } from 'react'
-import { Instagram, Linkedin } from 'lucide-react'
 
-// Simple TikTok SVG Icon for brand consistency
+// Simple SVG Icons for brand consistency & build reliability
+const InstagramIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+  </svg>
+)
+
 const TikTokIcon = () => (
-  <svg 
-    width="16" 
-    height="16" 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="1.5" 
-    strokeLinecap="round" 
-    strokeLinejoin="round"
-  >
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5" />
+  </svg>
+)
+
+const LinkedInIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path>
+    <rect x="2" y="9" width="4" height="12"></rect>
+    <circle cx="4" cy="4" r="2"></circle>
   </svg>
 )
 
@@ -62,7 +68,7 @@ export default function TopHeader() {
           </NavLink>
         </nav>
 
-        {/* Right — Social Icons */}
+        {/* Right — Social Icons (Using direct SVGs for deployment stability) */}
         <div className="flex items-center gap-6">
           <a
             href="https://www.instagram.com/markshotthis/"
@@ -71,7 +77,7 @@ export default function TopHeader() {
             className="text-black hover:opacity-40 transition-opacity"
             aria-label="Instagram"
           >
-            <Instagram size={16} strokeWidth={1.5} />
+            <InstagramIcon />
           </a>
           <a
             href="https://www.tiktok.com/@whatidowhenidonthoop"
@@ -89,7 +95,7 @@ export default function TopHeader() {
             className="text-black hover:opacity-40 transition-opacity"
             aria-label="LinkedIn"
           >
-            <Linkedin size={16} strokeWidth={1.5} />
+            <LinkedInIcon />
           </a>
         </div>
       </header>
@@ -138,13 +144,13 @@ export default function TopHeader() {
           
           <div className="flex items-center gap-8 mt-4">
             <a href="https://www.instagram.com/markshotthis/" target="_blank" rel="noreferrer" className="text-black hover:opacity-40">
-              <Instagram size={20} strokeWidth={1.5} />
+              <InstagramIcon />
             </a>
             <a href="https://www.tiktok.com/@whatidowhenidonthoop" target="_blank" rel="noreferrer" className="text-black hover:opacity-40">
               <TikTokIcon />
             </a>
             <a href="https://www.linkedin.com/in/mark-militar-42634b376/" target="_blank" rel="noreferrer" className="text-black hover:opacity-40">
-              <Linkedin size={20} strokeWidth={1.5} />
+              <LinkedInIcon />
             </a>
           </div>
         </div>

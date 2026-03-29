@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Work from './pages/Work'
+import Gallery from './pages/Gallery'
 import About from './pages/About'
 import Contact from './pages/Contact'
 
@@ -9,6 +10,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Navigate to="/work" replace />} />
         <Route path="/work" element={<Work />} />
+        <Route path="/work/:categoryId" element={<Gallery />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
       </Routes>

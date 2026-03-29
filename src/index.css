@@ -165,3 +165,11 @@
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 0px; }
+
+.animate-fade-in {
+  animation: fadeIn 0.8s ease-out forwards;
+}
+
+.loaded-fade-in {
+  animation: fadeIn 1s ease-in forwards;
+}

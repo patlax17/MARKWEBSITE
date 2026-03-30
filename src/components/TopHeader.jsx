@@ -43,6 +43,15 @@ export default function TopHeader() {
         {/* Center — Nav */}
         <nav className="flex items-center gap-12">
           <NavLink
+            to="/"
+            end
+            className={({ isActive }) =>
+              `text-[11px] font-light tracking-[0.15em] uppercase transition-opacity hover:opacity-40 ${isActive ? 'opacity-40' : 'text-black'}`
+            }
+          >
+            Home
+          </NavLink>
+          <NavLink
             to="/work"
             className={({ isActive }) =>
               `text-[11px] font-light tracking-[0.15em] uppercase transition-opacity hover:opacity-40 ${isActive ? 'opacity-40' : 'text-black'}`
@@ -120,6 +129,14 @@ export default function TopHeader() {
       {/* ── Mobile Full-screen Menu ── */}
       {menuOpen && (
         <div className="md:hidden fixed inset-0 z-40 bg-white flex flex-col items-center justify-center gap-10">
+          <NavLink
+            to="/"
+            end
+            className="text-2xl font-light tracking-wide text-black hover:opacity-40 transition-opacity"
+            onClick={() => setMenuOpen(false)}
+          >
+            Home
+          </NavLink>
           <NavLink
             to="/work"
             className="text-2xl font-light tracking-wide text-black hover:opacity-40 transition-opacity"

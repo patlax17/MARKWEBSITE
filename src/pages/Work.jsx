@@ -7,11 +7,21 @@ export default function Work() {
   const [categories, setCategories] = useState(localData)
 
   useEffect(() => {
-    // In production, fetch live data from Vercel Blob via API
-    fetch('/api/gallery')
-      .then(r => r.json())
-      .then(data => { if (Array.isArray(data) && data.length > 0) setCategories(data) })
-      .catch(() => { /* keep local fallback */ })
+    const applyOrder = (cats, order) => {
+      if (!order || order.length === 0) return cats
+      const map = Object.fromEntries(cats.map(c => [c.title, c]))
+      const ordered = order.map(title => map[title]).filter(Boolean)
+      const rest = cats.filter(c => !order.includes(c.title))
+      return [...ordered, ...rest]
+    }
+
+    Promise.all([
+      fetch('/api/gallery').then(r => r.json()).catch(() => localData),
+      fetch('/api/order?type=categories').then(r => r.json()).catch(() => ({ order: [] })),
+    ]).then(([galleryData, orderData]) => {
+      const cats = Array.isArray(galleryData) && galleryData.length > 0 ? galleryData : localData
+      setCategories(applyOrder(cats, orderData.order))
+    })
   }, [])
 
   return (

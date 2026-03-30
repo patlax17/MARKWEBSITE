@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import TopHeader from '../components/TopHeader'
 import Lightbox from '../components/Lightbox'
 
@@ -48,14 +48,28 @@ function MasonryImage({ src, index, onClick }) {
 }
 
 export default function Home() {
+  const [images, setImages] = useState(IMAGE_FILES.map(f => `/portfolio/${f}`))
   const [lightboxIndex, setLightboxIndex] = useState(null)
+
+  useEffect(() => {
+    fetch('/api/order?type=home')
+      .then(r => r.json())
+      .then(data => {
+        if (data.order && data.order.length > 0) {
+          const ordered = data.order.map(f => `/portfolio/${f}`)
+          const rest = IMAGE_FILES.filter(f => !data.order.includes(f)).map(f => `/portfolio/${f}`)
+          setImages([...ordered, ...rest])
+        }
+      })
+      .catch(() => {})
+  }, [])
 
   const openLightbox = useCallback((i) => setLightboxIndex(i), [])
   const closeLightbox = useCallback(() => setLightboxIndex(null), [])
   const prevImage = useCallback(() =>
     setLightboxIndex(i => (i > 0 ? i - 1 : i)), [])
   const nextImage = useCallback(() =>
-    setLightboxIndex(i => (i < IMAGES.length - 1 ? i + 1 : i)), [])
+    setLightboxIndex(i => (i < images.length - 1 ? i + 1 : i)), [images])
 
   return (
     <>
@@ -63,7 +77,7 @@ export default function Home() {
 
       <div className="pt-24 md:pt-32 px-1.5 md:px-2 pb-8">
         <div className="masonry-grid">
-          {IMAGES.map((src, i) => (
+          {images.map((src, i) => (
             <MasonryImage
               key={src}
               src={src}
@@ -76,7 +90,7 @@ export default function Home() {
 
       {lightboxIndex !== null && (
         <Lightbox
-          images={IMAGES}
+          images={images}
           currentIndex={lightboxIndex}
           onClose={closeLightbox}
           onPrev={prevImage}

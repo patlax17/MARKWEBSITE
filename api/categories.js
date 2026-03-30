@@ -117,10 +117,36 @@ export default async function handler(req, res) {
     if (!oldName?.trim() || !newName?.trim()) return res.status(400).json({ error: 'Missing old or new name' });
 
     try {
-      await cloudinary.api.rename_folder(`mark-portfolio/${oldName.trim()}`, `mark-portfolio/${newName.trim()}`);
+      try {
+        await cloudinary.api.rename_folder(`mark-portfolio/${oldName.trim()}`, `mark-portfolio/${newName.trim()}`);
+      } catch (folderErr) {
+        // Fallback for flat-namespace Cloudinary accounts (Dynamic Folders)
+        if (folderErr.error?.message?.includes('Cannot find source folder')) {
+          const search = await cloudinary.search
+            .expression(`public_id:mark-portfolio/${oldName.trim()}/*`)
+            .max_results(500)
+            .execute();
+            
+          if (search.resources.length > 0) {
+            await Promise.all(search.resources.map(r => {
+              const originalId = r.public_id;
+              const newId = originalId.replace(`mark-portfolio/${oldName.trim()}/`, `mark-portfolio/${newName.trim()}/`);
+              return cloudinary.uploader.rename(originalId, newId, { overwrite: true, invalidate: true });
+            }));
+          } else {
+            // Empty folder: recreate placeholder in the new destination
+            await cloudinary.uploader.upload(
+              'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
+              { public_id: `mark-portfolio/${newName.trim()}/_placeholder`, resource_type: 'image' }
+            );
+          }
+        } else {
+          throw folderErr;
+        }
+      }
       return res.status(200).json({ success: true });
     } catch (err) {
-      if (err.error?.message?.includes('Cannot rename folder to itself')) {
+      if (err.error?.message?.includes('Cannot rename folder to itself') || err.message?.includes('Cannot rename folder to itself')) {
         return res.status(200).json({ success: true });
       }
       return res.status(500).json({ error: err.error?.message || err.message });

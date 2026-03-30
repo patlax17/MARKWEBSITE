@@ -153,12 +153,29 @@ function WorkUploadZone({ folder, password, onDone }) {
       const file = files[i]
       setProgress(p => { const n=[...p]; n[i]='uploading'; return n })
       try {
-        const res = await fetch('/api/upload', {
+        // Step 1: Get a signed upload token from our API (tiny JSON request — no Vercel body limit hit)
+        const signRes = await fetch('/api/sign-upload', {
           method: 'POST',
-          headers: { 'Content-Type': file.type, 'x-admin-password': password, 'x-folder-name': `mark-portfolio/${folder}`, 'x-file-name': file.name },
-          body: file,
+          headers: { 'Content-Type': 'application/json', 'x-admin-password': password },
+          body: JSON.stringify({ folder: `mark-portfolio/${folder}`, filename: file.name }),
         })
-        if (!res.ok) throw new Error()
+        if (!signRes.ok) throw new Error('Failed to sign upload')
+        const { signature, timestamp, publicId, cloudName, apiKey } = await signRes.json()
+
+        // Step 2: Upload the file DIRECTLY to Cloudinary — bypasses Vercel's 4.5MB body limit
+        const form = new FormData()
+        form.append('file', file)
+        form.append('api_key', apiKey)
+        form.append('timestamp', timestamp)
+        form.append('signature', signature)
+        form.append('public_id', publicId)
+        form.append('overwrite', 'true')
+
+        const upRes = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+          method: 'POST',
+          body: form,
+        })
+        if (!upRes.ok) throw new Error('Cloudinary upload failed')
         setProgress(p => { const n=[...p]; n[i]='done'; return n })
       } catch { setProgress(p => { const n=[...p]; n[i]='error'; return n }) }
     }
@@ -237,17 +254,37 @@ function HomePhotosTab({ password, showMsg }) {
   const handleUpload = async (files) => {
     if (!files.length) return
     setUploading(true)
+    let successCount = 0
     for (const file of files) {
       try {
-        await fetch('/api/home-gallery', {
+        // Step 1: Sign the upload on our server (no file data — tiny request)
+        const signRes = await fetch('/api/sign-upload', {
           method: 'POST',
-          headers: { 'Content-Type': file.type, 'x-admin-password': password, 'x-file-name': file.name },
-          body: file,
+          headers: { 'Content-Type': 'application/json', 'x-admin-password': password },
+          body: JSON.stringify({ folder: 'mark-portfolio/home', filename: file.name }),
         })
+        if (!signRes.ok) throw new Error('Sign failed')
+        const { signature, timestamp, publicId, cloudName, apiKey } = await signRes.json()
+
+        // Step 2: Upload directly to Cloudinary — bypasses Vercel's 4.5MB body limit
+        const form = new FormData()
+        form.append('file', file)
+        form.append('api_key', apiKey)
+        form.append('timestamp', timestamp)
+        form.append('signature', signature)
+        form.append('public_id', publicId)
+        form.append('overwrite', 'true')
+
+        const upRes = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+          method: 'POST',
+          body: form,
+        })
+        if (!upRes.ok) throw new Error('Upload failed')
+        successCount++
       } catch {}
     }
     setUploading(false)
-    showMsg(`✓ ${files.length} photo${files.length!==1?'s':''} added to Home Page!`)
+    showMsg(`✓ ${successCount} photo${successCount!==1?'s':''} added to Home Page!`)
     loadHomeImages()
   }
 

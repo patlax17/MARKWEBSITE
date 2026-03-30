@@ -2,8 +2,8 @@ import { useState, useCallback, useEffect } from 'react'
 import TopHeader from '../components/TopHeader'
 import Lightbox from '../components/Lightbox'
 
-// All 84 portfolio images
-const IMAGE_FILES = [
+// Fallback static list (used if Cloudinary API unavailable)
+const FALLBACK_IMAGES = [
   'DSC07282-5.JPG','DSC07472-9.JPG','DSC07530-13.JPG','DSC07585-16.JPG',
   'DSC07730 2.jpg','DSC07957-6.jpg','DSC08027 2.jpg','DSC08242-11.jpg',
   'DSC08274-12.jpg','DSC08447.jpg','DSC08474.jpg','DSC08589-16.jpg',
@@ -27,13 +27,10 @@ const IMAGE_FILES = [
   'tville-13.jpg','tville-14.jpg','tville-2.jpg','tville-7.jpg',
   'tvilleatcurtis-19.jpg','tvilleatcurtis-4.jpg','tvilleatcurtis-5.jpg',
   'tvilleatcurtis-6.jpg',
-]
-
-const IMAGES = IMAGE_FILES.map(f => `/portfolio/${f}`)
+].map(f => `/portfolio/${f}`)
 
 function MasonryImage({ src, index, onClick }) {
   const [loaded, setLoaded] = useState(false)
-
   return (
     <div className="masonry-item" onClick={() => onClick(index)}>
       <img
@@ -48,42 +45,45 @@ function MasonryImage({ src, index, onClick }) {
 }
 
 export default function Home() {
-  const [images, setImages] = useState(IMAGE_FILES.map(f => `/portfolio/${f}`))
+  const [images, setImages]       = useState(FALLBACK_IMAGES)
   const [lightboxIndex, setLightboxIndex] = useState(null)
 
   useEffect(() => {
-    fetch('/api/order?type=home')
-      .then(r => r.json())
-      .then(data => {
-        if (data.order && data.order.length > 0) {
-          const ordered = data.order.map(f => `/portfolio/${f}`)
-          const rest = IMAGE_FILES.filter(f => !data.order.includes(f)).map(f => `/portfolio/${f}`)
-          setImages([...ordered, ...rest])
-        }
-      })
-      .catch(() => {})
+    // 1. Fetch Cloudinary home images
+    // 2. Apply saved order on top
+    Promise.all([
+      fetch('/api/home-gallery').then(r => r.json()).catch(() => ({ images: [] })),
+      fetch('/api/order?type=home').then(r => r.json()).catch(() => ({ order: [] })),
+    ]).then(([galleryData, orderData]) => {
+      let urls = galleryData.images?.map(img => img.url) || []
+      if (urls.length === 0) { setImages(FALLBACK_IMAGES); return }
+
+      // Apply saved order if present
+      if (orderData.order?.length > 0) {
+        const urlMap = Object.fromEntries(
+          galleryData.images.map(img => [img.filename, img.url])
+        )
+        const ordered = orderData.order.map(fn => urlMap[fn]).filter(Boolean)
+        const rest    = urls.filter(u => !ordered.includes(u))
+        urls = [...ordered, ...rest]
+      }
+
+      setImages(urls)
+    })
   }, [])
 
-  const openLightbox = useCallback((i) => setLightboxIndex(i), [])
+  const openLightbox  = useCallback((i) => setLightboxIndex(i), [])
   const closeLightbox = useCallback(() => setLightboxIndex(null), [])
-  const prevImage = useCallback(() =>
-    setLightboxIndex(i => (i > 0 ? i - 1 : i)), [])
-  const nextImage = useCallback(() =>
-    setLightboxIndex(i => (i < images.length - 1 ? i + 1 : i)), [images])
+  const prevImage     = useCallback(() => setLightboxIndex(i => (i > 0 ? i - 1 : i)), [])
+  const nextImage     = useCallback(() => setLightboxIndex(i => (i < images.length - 1 ? i + 1 : i)), [images])
 
   return (
     <>
       <TopHeader />
-
       <div className="pt-24 md:pt-32 px-1.5 md:px-2 pb-8">
         <div className="masonry-grid">
           {images.map((src, i) => (
-            <MasonryImage
-              key={src}
-              src={src}
-              index={i}
-              onClick={openLightbox}
-            />
+            <MasonryImage key={src} src={src} index={i} onClick={openLightbox} />
           ))}
         </div>
       </div>

@@ -1,32 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react'
-
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-const HOME_IMAGES = [
-  'DSC07282-5.JPG','DSC07472-9.JPG','DSC07530-13.JPG','DSC07585-16.JPG',
-  'DSC07730 2.jpg','DSC07957-6.jpg','DSC08027 2.jpg','DSC08242-11.jpg',
-  'DSC08274-12.jpg','DSC08447.jpg','DSC08474.jpg','DSC08589-16.jpg',
-  'DSC08704-17.jpg','IMG_6077.jpg','IMG_6087.jpg','IMG_6091.jpg',
-  'IMG_7263.jpg','NEWDORP-2.JPG','NEWDORP-5.JPG','NEWDORP-6.JPG',
-  'babyshaq.jpg','bleed-10.jpg','bleed-7.jpg','bleed-9.jpg',
-  'chaching.jpg','compressions-1-2.jpg','farrell-17.jpg','farrell-9.jpg',
-  'farrell.jpg','farrellchip-1.jpg','farrellchip-4.jpg','farrellchip-6.jpg',
-  'farrellpregame-1.jpg','gia-1.jpg','haad.jpg','japan-1-5.jpg',
-  'japan-2.jpg','ledlum.jpg','ledlummurphy10.jpg','ledlummurphy14.jpg',
-  'ledlummurphy22.jpg','ledlummurphy23.jpg','ledlummurphy8.jpg',
-  'locerkroom-2 2.JPG','militar-mark-midterm1.jpg','militar-mark-midterm12.jpg',
-  'militar-mark-midterm13.jpg','militar-mark-midterm2.jpg',
-  'porto-1-12.jpg','porto-1-2.jpg','porto-1-3.jpg','porto-1-4.jpg',
-  'porto-1-5.jpg','porto-1-6.jpg','porto-1-7.jpg','porto-1.jpg',
-  'porto-2-3.jpg','porto-2.jpg','porto-3-2.jpg','porto-3-3.jpg',
-  'porto-3.jpg','porto-4-2.jpg','porto-4-3.jpg','porto-4.jpg',
-  'porto-5-2.jpg','porto-5.jpg','porto-6-2.jpg','porto-6.jpg',
-  'porto-7.jpg','porto-8.jpg','porto-9.jpg','post12.jpg',
-  'post3.jpg','reid.jpg','stop4watson-1.jpg','stretch.jpg',
-  'tville-13.jpg','tville-14.jpg','tville-2.jpg','tville-7.jpg',
-  'tvilleatcurtis-19.jpg','tvilleatcurtis-4.jpg','tvilleatcurtis-5.jpg',
-  'tvilleatcurtis-6.jpg',
-]
+import { useState, useEffect, useRef } from 'react'
 
 const SEED_CATEGORIES = [
   "2025 Big East Men's Basketball Championship",
@@ -44,12 +16,10 @@ const SEED_CATEGORIES = [
 function SortableList({ items, renderItem, onReorder }) {
   const dragIndex = useRef(null)
   const [list, setList] = useState(items)
-
   useEffect(() => setList(items), [items])
 
   const handleDragStart = (i) => { dragIndex.current = i }
-
-  const handleDragOver = (e, i) => {
+  const handleDragOver  = (e, i) => {
     e.preventDefault()
     if (dragIndex.current === null || dragIndex.current === i) return
     const next = [...list]
@@ -58,17 +28,12 @@ function SortableList({ items, renderItem, onReorder }) {
     dragIndex.current = i
     setList(next)
   }
-
-  const handleDrop = () => {
-    onReorder(list)
-    dragIndex.current = null
-  }
+  const handleDrop = () => { onReorder(list); dragIndex.current = null }
 
   return (
     <ul className="space-y-2">
       {list.map((item, i) => (
-        <li
-          key={typeof item === 'string' ? item : item.id || i}
+        <li key={typeof item === 'object' ? (item.publicId || i) : (item + i)}
           draggable
           onDragStart={() => handleDragStart(i)}
           onDragOver={(e) => handleDragOver(e, i)}
@@ -83,9 +48,9 @@ function SortableList({ items, renderItem, onReorder }) {
   )
 }
 
-// ─── Upload zone ───────────────────────────────────────────────────────────────
+// ─── Work Upload Zone ──────────────────────────────────────────────────────────
 
-function UploadZone({ folder, password, onDone }) {
+function WorkUploadZone({ folder, password, onDone }) {
   const [files, setFiles]       = useState([])
   const [progress, setProgress] = useState([])
   const [uploading, setUploading] = useState(false)
@@ -108,9 +73,7 @@ function UploadZone({ folder, password, onDone }) {
         })
         if (!res.ok) throw new Error()
         setProgress(p => { const n=[...p]; n[i]='done'; return n })
-      } catch {
-        setProgress(p => { const n=[...p]; n[i]='error'; return n })
-      }
+      } catch { setProgress(p => { const n=[...p]; n[i]='error'; return n }) }
     }
     setUploading(false); setFiles([]); onDone()
   }
@@ -124,11 +87,11 @@ function UploadZone({ folder, password, onDone }) {
         onDragOver={e=>{e.preventDefault();setDragging(true)}}
         onDragLeave={()=>setDragging(false)}
         onDrop={e=>{e.preventDefault();setDragging(false);addFiles(e.dataTransfer.files)}}
-        onClick={()=>document.getElementById(`fi-${folder}`).click()}
+        onClick={()=>document.getElementById(`fi-work-${folder}`).click()}
         className={`border-2 border-dashed p-16 text-center cursor-pointer transition-colors ${dragging?'border-black bg-gray-50':'border-gray-200 hover:border-gray-400'}`}
       >
         <p className="text-[11px] font-light tracking-[0.2em] uppercase text-gray-400">Drag photos here or click to select</p>
-        <input id={`fi-${folder}`} type="file" multiple accept="image/*" className="hidden" onChange={e=>addFiles(e.target.files)} />
+        <input id={`fi-work-${folder}`} type="file" multiple accept="image/*" className="hidden" onChange={e=>addFiles(e.target.files)} />
       </div>
       {files.length>0 && (
         <div className="space-y-1 max-h-40 overflow-y-auto border border-gray-100 p-3">
@@ -150,27 +113,193 @@ function UploadZone({ folder, password, onDone }) {
   )
 }
 
+// ─── Home Photos Manager ───────────────────────────────────────────────────────
+
+function HomePhotosTab({ password, showMsg }) {
+  const [homeImages, setHomeImages] = useState([])
+  const [loading, setLoading]       = useState(true)
+  const [uploading, setUploading]   = useState(false)
+  const [dragging, setDragging]     = useState(false)
+  const [deleting, setDeleting]     = useState(null)
+  const [subTab, setSubTab]         = useState('manage') // 'manage' | 'reorder'
+  const [homeOrder, setHomeOrder]   = useState([])
+  const [savingOrder, setSavingOrder] = useState(false)
+
+  const loadHomeImages = async () => {
+    setLoading(true)
+    try {
+      const [galleryRes, orderRes] = await Promise.all([
+        fetch('/api/home-gallery').then(r => r.json()),
+        fetch('/api/order?type=home').then(r => r.json()).catch(() => ({ order: [] })),
+      ])
+      let imgs = galleryRes.images || []
+      if (orderRes.order?.length > 0) {
+        setHomeOrder(orderRes.order)
+        const map = Object.fromEntries(imgs.map(img => [img.filename, img]))
+        const ordered = orderRes.order.map(fn => map[fn]).filter(Boolean)
+        const rest    = imgs.filter(img => !orderRes.order.includes(img.filename))
+        imgs = [...ordered, ...rest]
+      }
+      setHomeImages(imgs)
+    } catch {}
+    setLoading(false)
+  }
+
+  useEffect(() => { loadHomeImages() }, [])
+
+  const handleUpload = async (files) => {
+    if (!files.length) return
+    setUploading(true)
+    for (const file of files) {
+      try {
+        await fetch('/api/home-gallery', {
+          method: 'POST',
+          headers: { 'Content-Type': file.type, 'x-admin-password': password, 'x-file-name': file.name },
+          body: file,
+        })
+      } catch {}
+    }
+    setUploading(false)
+    showMsg(`✓ ${files.length} photo${files.length!==1?'s':''} added to Home Page!`)
+    loadHomeImages()
+  }
+
+  const handleDelete = async (img) => {
+    if (!confirm(`Remove "${img.filename}" from the home page?`)) return
+    setDeleting(img.publicId)
+    try {
+      await fetch('/api/home-gallery', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json', 'x-admin-password': password },
+        body: JSON.stringify({ publicId: img.publicId }),
+      })
+      showMsg(`✓ "${img.filename}" removed.`)
+      loadHomeImages()
+    } catch { showMsg('✗ Failed to delete.') }
+    setDeleting(null)
+  }
+
+  const saveHomeOrder = async (ordered) => {
+    setSavingOrder(true)
+    const order = ordered.map(img => img.filename)
+    try {
+      await fetch('/api/order?type=home', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-password': password },
+        body: JSON.stringify({ order }),
+      })
+      showMsg('✓ Home page order saved!')
+    } catch { showMsg('✗ Failed to save order.') }
+    setSavingOrder(false)
+  }
+
+  return (
+    <div className="space-y-8">
+      {/* Sub-tabs */}
+      <div className="flex gap-6 border-b border-gray-100">
+        {[['manage','Manage Photos'],['reorder','Reorder']].map(([key,label])=>(
+          <button key={key} onClick={()=>setSubTab(key)}
+            className={`pb-3 text-[11px] font-light tracking-[0.15em] uppercase transition-colors ${subTab===key?'text-black border-b border-black -mb-px':'text-gray-400 hover:text-black'}`}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* Manage: Upload + Delete */}
+      {subTab==='manage' && (
+        <div className="space-y-8">
+          {/* Upload zone */}
+          <div>
+            <h3 className="text-[11px] font-light tracking-[0.2em] uppercase text-black mb-4">Add Photos</h3>
+            <div
+              onDragOver={e=>{e.preventDefault();setDragging(true)}}
+              onDragLeave={()=>setDragging(false)}
+              onDrop={e=>{e.preventDefault();setDragging(false);handleUpload(Array.from(e.dataTransfer.files).filter(f=>f.type.startsWith('image/')))}}
+              onClick={()=>document.getElementById('fi-home').click()}
+              className={`border-2 border-dashed p-12 text-center cursor-pointer transition-colors ${dragging?'border-black bg-gray-50':'border-gray-200 hover:border-gray-400'}`}
+            >
+              {uploading
+                ? <p className="text-[11px] font-light tracking-[0.2em] uppercase text-blue-500">Uploading…</p>
+                : <p className="text-[11px] font-light tracking-[0.2em] uppercase text-gray-400">Drag photos here or click to select</p>
+              }
+              <input id="fi-home" type="file" multiple accept="image/*" className="hidden"
+                onChange={e=>handleUpload(Array.from(e.target.files))} />
+            </div>
+          </div>
+
+          {/* Current photos grid */}
+          <div>
+            <h3 className="text-[11px] font-light tracking-[0.2em] uppercase text-black mb-4">
+              Current Photos ({homeImages.length})
+            </h3>
+            {loading
+              ? <p className="text-[11px] font-light text-gray-400">Loading…</p>
+              : (
+                <div className="grid grid-cols-3 gap-3">
+                  {homeImages.map(img => (
+                    <div key={img.publicId} className="relative group">
+                      <img src={img.url} alt={img.filename} className="w-full aspect-square object-cover" />
+                      <button
+                        onClick={() => handleDelete(img)}
+                        disabled={deleting === img.publicId}
+                        className="absolute inset-0 bg-white bg-opacity-0 group-hover:bg-opacity-80 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100"
+                      >
+                        <span className="text-[10px] font-light tracking-[0.15em] uppercase text-red-600">
+                          {deleting === img.publicId ? 'Removing…' : 'Remove'}
+                        </span>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )
+            }
+          </div>
+        </div>
+      )}
+
+      {/* Reorder */}
+      {subTab==='reorder' && (
+        <div className="space-y-4">
+          <p className="text-[11px] font-light text-gray-400">Drag photos to change their order on the home page. Saves automatically.</p>
+          {savingOrder && <p className="text-[11px] font-light text-blue-500">Saving…</p>}
+          {loading
+            ? <p className="text-[11px] font-light text-gray-400">Loading…</p>
+            : (
+              <SortableList
+                items={homeImages}
+                onReorder={saveHomeOrder}
+                renderItem={(img, i) => (
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="text-[10px] font-light text-gray-300 w-5 shrink-0">{i+1}</span>
+                    <img src={img.url} alt="" className="w-10 h-10 object-cover shrink-0" />
+                    <span className="text-[12px] font-light text-gray-600 truncate">{img.filename}</span>
+                  </div>
+                )}
+              />
+            )
+          }
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Main Admin ────────────────────────────────────────────────────────────────
 
 export default function Admin() {
-  const [password, setPassword]       = useState('')
+  const [password, setPassword]         = useState('')
   const [authenticated, setAuthenticated] = useState(false)
-  const [authError, setAuthError]     = useState(false)
-  const [tab, setTab]                 = useState('upload')
-  const [categories, setCategories]   = useState([])
+  const [authError, setAuthError]       = useState(false)
+  const [tab, setTab]                   = useState('upload')
+  const [categories, setCategories]     = useState([])
   const [selectedFolder, setSelectedFolder] = useState('')
-  const [newCatName, setNewCatName]   = useState('')
-  const [creating, setCreating]       = useState(false)
+  const [newCatName, setNewCatName]     = useState('')
+  const [creating, setCreating]         = useState(false)
+  const [catOrder, setCatOrder]         = useState([])
+  const [savingCat, setSavingCat]       = useState(false)
+  const [msg, setMsg]                   = useState('')
 
-  // Reorder state
-  const [catOrder, setCatOrder]       = useState([])
-  const [homeOrder, setHomeOrder]     = useState([])
-  const [savingCat, setSavingCat]     = useState(false)
-  const [savingHome, setSavingHome]   = useState(false)
-  const [reorderSub, setReorderSub]   = useState('categories') // 'categories' | 'home'
-  const [msg, setMsg]                 = useState('')
-
-  const showMsg = (text) => { setMsg(text); setTimeout(()=>setMsg(''), 5000) }
+  const showMsg = (text) => { setMsg(text); setTimeout(() => setMsg(''), 5000) }
 
   const loadCategories = async (pw) => {
     try {
@@ -183,14 +312,10 @@ export default function Admin() {
     } catch {}
   }
 
-  const loadOrders = async () => {
+  const loadCatOrder = async () => {
     try {
-      const [cr, hr] = await Promise.all([
-        fetch('/api/order?type=categories').then(r=>r.json()),
-        fetch('/api/order?type=home').then(r=>r.json()),
-      ])
-      if (cr.order?.length > 0) setCatOrder(cr.order)
-      if (hr.order?.length > 0) setHomeOrder(hr.order)
+      const data = await fetch('/api/order?type=categories').then(r => r.json())
+      if (data.order?.length > 0) setCatOrder(data.order)
     } catch {}
   }
 
@@ -199,10 +324,9 @@ export default function Admin() {
     const res = await fetch('/api/categories', { headers: { 'x-admin-password': password } })
     if (res.status === 401) { setAuthError(true); return }
     setAuthenticated(true); setAuthError(false)
-    await Promise.all([loadCategories(password), loadOrders()])
+    await Promise.all([loadCategories(password), loadCatOrder()])
   }
 
-  // Save category order
   const saveCatOrder = async (order) => {
     setCatOrder(order); setSavingCat(true)
     try {
@@ -211,23 +335,9 @@ export default function Admin() {
         headers: { 'Content-Type': 'application/json', 'x-admin-password': password },
         body: JSON.stringify({ order }),
       })
-      showMsg('✓ Category order saved! The /work page now reflects this order.')
-    } catch { showMsg('✗ Failed to save order.') }
+      showMsg('✓ Category order saved! /work page updated.')
+    } catch { showMsg('✗ Failed to save.') }
     setSavingCat(false)
-  }
-
-  // Save home image order
-  const saveHomeOrder = async (order) => {
-    setHomeOrder(order); setSavingHome(true)
-    try {
-      await fetch('/api/order?type=home', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-admin-password': password },
-        body: JSON.stringify({ order }),
-      })
-      showMsg('✓ Homepage order saved! The home page now reflects this order.')
-    } catch { showMsg('✗ Failed to save order.') }
-    setSavingHome(false)
   }
 
   const handleCreateCategory = async () => {
@@ -240,21 +350,16 @@ export default function Admin() {
         body: JSON.stringify({ name: newCatName.trim() }),
       })
       if (!res.ok) throw new Error()
-      showMsg(`✓ Category "${newCatName.trim()}" created! Upload photos to it from the Upload tab.`)
+      showMsg(`✓ Category "${newCatName.trim()}" created!`)
       setNewCatName('')
       await loadCategories(password)
-    } catch { showMsg('✗ Failed to create. Try again.') }
+    } catch { showMsg('✗ Failed to create.') }
     setCreating(false)
   }
 
-  // Derive display lists for reorder
   const displayCategories = catOrder.length > 0
     ? [...catOrder, ...categories.filter(c => !catOrder.includes(c))]
     : categories.length > 0 ? categories : SEED_CATEGORIES
-
-  const displayHomeImages = homeOrder.length > 0
-    ? [...homeOrder, ...HOME_IMAGES.filter(f => !homeOrder.includes(f))]
-    : HOME_IMAGES
 
   // ─── Login ─────────────────────────────────────────────────────────────────
   if (!authenticated) return (
@@ -285,8 +390,8 @@ export default function Admin() {
       <main className="pt-32 px-6 md:px-10 pb-20 max-w-2xl mx-auto">
 
         {/* Main Tabs */}
-        <div className="flex gap-8 mb-12 border-b border-gray-100">
-          {[['upload','Upload Photos'],['categories','Manage Categories'],['reorder','Reorder']].map(([key,label])=>(
+        <div className="flex flex-wrap gap-6 mb-12 border-b border-gray-100">
+          {[['upload','Work: Upload'],['categories','Work: Categories'],['work-reorder','Work: Reorder'],['home','Home Page Photos']].map(([key,label])=>(
             <button key={key} onClick={()=>setTab(key)}
               className={`pb-4 text-[11px] font-light tracking-[0.2em] uppercase transition-colors ${tab===key?'text-black border-b-2 border-black -mb-px':'text-gray-400 hover:text-black'}`}>
               {label}
@@ -294,10 +399,10 @@ export default function Admin() {
           ))}
         </div>
 
-        {/* ── Upload Tab ── */}
+        {/* ── Work Upload ── */}
         {tab==='upload' && (
           <div className="space-y-8">
-            <p className="text-[12px] font-light text-gray-400">Pick a category, drag in your photos, then click Upload. Images go live immediately.</p>
+            <p className="text-[12px] font-light text-gray-400">Pick a category, drag photos in, click Upload. Goes live immediately.</p>
             <div>
               <label className="block text-[10px] font-light tracking-[0.2em] uppercase text-gray-400 mb-2">Category</label>
               <select value={selectedFolder} onChange={e=>setSelectedFolder(e.target.value)}
@@ -308,18 +413,18 @@ export default function Admin() {
               </select>
             </div>
             {selectedFolder && (
-              <UploadZone key={selectedFolder} folder={selectedFolder} password={password}
-                onDone={()=>showMsg(`✓ Photos uploaded to "${selectedFolder}". Live on site now.`)} />
+              <WorkUploadZone key={selectedFolder} folder={selectedFolder} password={password}
+                onDone={()=>showMsg(`✓ Photos uploaded to "${selectedFolder}". Live now.`)} />
             )}
           </div>
         )}
 
-        {/* ── Categories Tab ── */}
+        {/* ── Work Categories ── */}
         {tab==='categories' && (
           <div className="space-y-12">
             <div>
               <h2 className="text-[11px] font-light tracking-[0.2em] uppercase text-black mb-2">Create New Category</h2>
-              <p className="text-[12px] font-light text-gray-400 mb-6">Type the name of the new shoot or project. After creating, upload photos to it.</p>
+              <p className="text-[12px] font-light text-gray-400 mb-6">Type the shoot name, hit Create, then upload photos to it.</p>
               <div className="flex gap-3">
                 <input type="text" value={newCatName} onChange={e=>setNewCatName(e.target.value)}
                   onKeyDown={e=>e.key==='Enter'&&handleCreateCategory()}
@@ -332,14 +437,14 @@ export default function Admin() {
               </div>
             </div>
             <div>
-              <h2 className="text-[11px] font-light tracking-[0.2em] uppercase text-black mb-6">Existing Categories ({categories.length || SEED_CATEGORIES.length})</h2>
-              <div className="space-y-0">
+              <h2 className="text-[11px] font-light tracking-[0.2em] uppercase text-black mb-6">Existing ({(categories.length||SEED_CATEGORIES.length)})</h2>
+              <div>
                 {(categories.length>0?categories:SEED_CATEGORIES).map(cat=>(
                   <div key={cat} className="flex items-center justify-between py-4 border-b border-gray-100">
                     <span className="text-[13px] font-light text-gray-800">{cat}</span>
                     <button onClick={()=>{setSelectedFolder(cat);setTab('upload')}}
                       className="text-[11px] font-light tracking-[0.15em] uppercase text-gray-400 hover:text-black transition-colors">
-                      Upload Photos →
+                      Upload →
                     </button>
                   </div>
                 ))}
@@ -348,58 +453,27 @@ export default function Admin() {
           </div>
         )}
 
-        {/* ── Reorder Tab ── */}
-        {tab==='reorder' && (
-          <div className="space-y-8">
-            <p className="text-[12px] font-light text-gray-400">Drag items to reorder. Changes save automatically after each drag.</p>
-
-            {/* Sub-tabs */}
-            <div className="flex gap-6 border-b border-gray-100">
-              {[['categories','Work Categories'],['home','Home Page Photos']].map(([key,label])=>(
-                <button key={key} onClick={()=>setReorderSub(key)}
-                  className={`pb-3 text-[11px] font-light tracking-[0.15em] uppercase transition-colors ${reorderSub===key?'text-black border-b border-black -mb-px':'text-gray-400 hover:text-black'}`}>
-                  {label}
-                </button>
-              ))}
-            </div>
-
-            {/* Reorder: Categories */}
-            {reorderSub==='categories' && (
-              <div className="space-y-4">
-                <p className="text-[11px] font-light text-gray-400">Drag to change the order categories appear on the /work page.</p>
-                {savingCat && <p className="text-[11px] font-light text-blue-500 tracking-wide">Saving…</p>}
-                <SortableList
-                  items={displayCategories}
-                  onReorder={saveCatOrder}
-                  renderItem={(cat, i) => (
-                    <div className="flex items-center gap-3 min-w-0">
-                      <span className="text-[10px] font-light text-gray-300 w-5 shrink-0">{i+1}</span>
-                      <span className="text-[13px] font-light text-gray-800 truncate">{cat}</span>
-                    </div>
-                  )}
-                />
-              </div>
-            )}
-
-            {/* Reorder: Home images */}
-            {reorderSub==='home' && (
-              <div className="space-y-4">
-                <p className="text-[11px] font-light text-gray-400">Drag to change the order photos appear on the home page masonry grid.</p>
-                {savingHome && <p className="text-[11px] font-light text-blue-500 tracking-wide">Saving…</p>}
-                <SortableList
-                  items={displayHomeImages}
-                  onReorder={saveHomeOrder}
-                  renderItem={(filename, i) => (
-                    <div className="flex items-center gap-3 min-w-0">
-                      <span className="text-[10px] font-light text-gray-300 w-5 shrink-0">{i+1}</span>
-                      <img src={`/portfolio/${filename}`} alt="" className="w-10 h-10 object-cover shrink-0 bg-gray-50" />
-                      <span className="text-[12px] font-light text-gray-600 truncate">{filename}</span>
-                    </div>
-                  )}
-                />
-              </div>
-            )}
+        {/* ── Work Reorder ── */}
+        {tab==='work-reorder' && (
+          <div className="space-y-6">
+            <p className="text-[12px] font-light text-gray-400">Drag categories to reorder how they appear on the /work page. Saves automatically.</p>
+            {savingCat && <p className="text-[11px] font-light text-blue-500">Saving…</p>}
+            <SortableList
+              items={displayCategories}
+              onReorder={saveCatOrder}
+              renderItem={(cat, i) => (
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="text-[10px] font-light text-gray-300 w-5 shrink-0">{i+1}</span>
+                  <span className="text-[13px] font-light text-gray-800 truncate">{cat}</span>
+                </div>
+              )}
+            />
           </div>
+        )}
+
+        {/* ── Home Page Photos ── */}
+        {tab==='home' && (
+          <HomePhotosTab password={password} showMsg={showMsg} />
         )}
 
       </main>

@@ -6,30 +6,68 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'mark2025';
+
+// Seed list — always available even if Cloudinary search has no extras
+const SEED_CATEGORIES = [
+  "2025 Big East Men's Basketball Championship",
+  "2025 CUNYAC Men's Championship",
+  "Curtis High School Boys Basketball Media Day 2025",
+  "High School Football",
+  "Japan",
+  "Liam Murphy x Chris Ledlum Basketball Camp",
+  "Nike NYvsNY Focus 2025",
+  "Staten Island Hoops",
+];
+
+async function getAllFolders() {
+  try {
+    // Search for all resources under mark-portfolio and extract unique subfolders
+    const result = await cloudinary.search
+      .expression('public_id:mark-portfolio/*')
+      .sort_by('public_id', 'asc')
+      .max_results(500)
+      .execute();
+
+    const folderSet = new Set(SEED_CATEGORIES);
+    for (const r of result.resources) {
+      const parts = r.public_id.split('/');
+      // public_id = mark-portfolio/FolderName/filename → parts[1] is the folder
+      if (parts.length >= 3 && parts[0] === 'mark-portfolio') {
+        folderSet.add(parts[1]);
+      }
+    }
+    return Array.from(folderSet).sort();
+  } catch {
+    // Fallback to seed list if search fails
+    return [...SEED_CATEGORIES].sort();
+  }
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-admin-password');
-
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  // POST: create a new category folder
-  if (req.method === 'POST') {
-    const password = req.headers['x-admin-password'];
-    if (password !== (process.env.ADMIN_PASSWORD || 'mark2025')) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
+  const password = req.headers['x-admin-password'];
+  if (password !== ADMIN_PASSWORD) return res.status(401).json({ error: 'Unauthorized' });
 
+  // GET — list all folders
+  if (req.method === 'GET') {
+    const folders = await getAllFolders();
+    return res.status(200).json({ folders });
+  }
+
+  // POST — create new category (uploads a placeholder to establish the folder)
+  if (req.method === 'POST') {
     let body = '';
     for await (const chunk of req) body += chunk;
     const { name } = JSON.parse(body);
 
-    if (!name || !name.trim()) {
-      return res.status(400).json({ error: 'Category name required' });
-    }
+    if (!name?.trim()) return res.status(400).json({ error: 'Category name required' });
 
     try {
-      // Create a placeholder image in the folder to establish it in Cloudinary
       await cloudinary.uploader.upload(
         'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
         {
@@ -38,25 +76,13 @@ export default async function handler(req, res) {
           resource_type: 'image',
         }
       );
-      return res.status(200).json({ success: true, name: name.trim() });
     } catch (err) {
-      // If placeholder already exists, folder already exists — that's fine
-      if (err.error?.message?.includes('already exists')) {
-        return res.status(200).json({ success: true, name: name.trim() });
+      // If placeholder already exists, that's fine
+      if (!err.error?.message?.includes('already exists')) {
+        return res.status(500).json({ error: err.message });
       }
-      return res.status(500).json({ error: err.message });
     }
-  }
-
-  // GET: list all category folders
-  if (req.method === 'GET') {
-    try {
-      const result = await cloudinary.api.sub_folders('mark-portfolio');
-      const folders = result.folders.map(f => f.name);
-      return res.status(200).json({ folders });
-    } catch (err) {
-      return res.status(500).json({ error: err.message });
-    }
+    return res.status(200).json({ success: true, name: name.trim() });
   }
 
   return res.status(405).json({ error: 'Method not allowed' });

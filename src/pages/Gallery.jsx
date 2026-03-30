@@ -5,19 +5,21 @@ import Lightbox from '../components/Lightbox'
 import localData from '../data/work_gallery.json'
 
 function MasonryImage({ src, index, onClick }) {
-  const [loaded, setLoaded] = useState(false)
   return (
-    <div className="masonry-item mb-4 overflow-hidden cursor-pointer" onClick={() => onClick(index)}>
+    <div
+      className="masonry-item mb-4 overflow-hidden cursor-pointer"
+      onClick={() => onClick(index)}
+    >
       <img
         src={src}
         alt="Mark Militar Photography"
-        className={`w-full h-auto transition-all duration-700 ease-in-out hover:opacity-80 ${loaded ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}
-        onLoad={() => setLoaded(true)}
+        className="w-full h-auto block transition-opacity duration-300 hover:opacity-75"
         loading="lazy"
       />
     </div>
   )
 }
+
 
 export default function Gallery() {
   const { categoryId } = useParams()

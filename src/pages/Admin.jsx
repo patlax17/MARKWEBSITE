@@ -424,6 +424,10 @@ export default function Admin() {
   const [savingAbout, setSavingAbout]   = useState(false)
   const [galleryData, setGalleryData]   = useState([])
   const [savingCover, setSavingCover]   = useState(null)
+  const [renamingFolder, setRenamingFolder] = useState(null)
+  const [renamingValue, setRenamingValue] = useState('')
+  const [deletingPhoto, setDeletingPhoto] = useState(null)
+  const [savingWorkOrder, setSavingWorkOrder] = useState(false)
 
   const showMsg = (text) => { setMsg(text); setTimeout(() => setMsg(''), 5000) }
 
@@ -550,6 +554,82 @@ export default function Admin() {
     }
   }
 
+  const handleRenameCategory = async (oldName, newName) => {
+    if (!newName.trim() || oldName === newName.trim()) {
+      setRenamingFolder(null)
+      return
+    }
+    const finalName = newName.trim()
+    
+    // Optimistic UI updates across dependencies
+    setCategories(prev => prev.map(c => c === oldName ? finalName : c))
+    setCatOrder(prev => prev.map(c => c === oldName ? finalName : c))
+    setGalleryData(prev => prev.map(c => c.folder === oldName ? { ...c, folder: finalName } : c))
+    if (selectedFolder === oldName) setSelectedFolder(finalName)
+    
+    setRenamingFolder(null)
+    showMsg(`Renaming "${oldName}" to "${finalName}"…`)
+    
+    try {
+      const res = await fetch('/api/categories', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'x-admin-password': password },
+        body: JSON.stringify({ oldName, newName: finalName }),
+      })
+      if (!res.ok) {
+        const d = await res.json()
+        throw new Error(d.error)
+      }
+      showMsg(`✓ Category renamed to "${finalName}".`)
+      // Refresh to ensure all Cloudinary configs perfectly match new paths
+      loadGallery()
+    } catch (err) {
+      showMsg(`✗ Rename failed: ${err.message}`)
+      loadCategories(password)
+      loadGallery()
+    }
+  }
+
+  const handleDeleteWorkPhoto = async (folder, url) => {
+    if (!confirm('Permanently delete this photo?')) return
+    setDeletingPhoto(url)
+    
+    // Optimistic UI update
+    setGalleryData(prev => prev.map(c => {
+      if (c.folder !== folder) return c
+      return { ...c, images: c.images.filter(img => img !== url) }
+    }))
+    
+    try {
+      const res = await fetch('/api/work-photo', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json', 'x-admin-password': password },
+        body: JSON.stringify({ url }),
+      })
+      if (!res.ok) throw new Error()
+      showMsg('✓ Photo deleted.')
+    } catch {
+      showMsg('✗ Failed to delete photo.')
+      loadGallery() // Revert local state
+    }
+    setDeletingPhoto(null)
+  }
+
+  const saveWorkOrder = async (folder, orderUrls) => {
+    setSavingWorkOrder(true)
+    setGalleryData(prev => prev.map(c => c.folder === folder ? { ...c, images: orderUrls } : c))
+    
+    try {
+      await fetch('/api/work-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-password': password },
+        body: JSON.stringify({ folder, order: orderUrls }),
+      })
+      showMsg('✓ Folder photo layout saved!')
+    } catch { showMsg('✗ Failed to save photo order.') }
+    setSavingWorkOrder(false)
+  }
+
   const displayCategories = catOrder.length > 0
     ? [...catOrder, ...categories.filter(c => !catOrder.includes(c))]
     : categories.length > 0 ? categories : SEED_CATEGORIES
@@ -584,7 +664,7 @@ export default function Admin() {
 
         {/* Main Tabs — always visible */}
         <div className="flex flex-wrap gap-6 mb-12 border-b border-gray-100">
-          {[['upload','Work: Upload'],['categories','Work: Categories'],['work-reorder','Work: Reorder'],['work-covers','Work: Covers'],['home','Home Page Photos'],['about-text','About Page']].map(([key,label])=>(
+          {[['upload','Work: Upload'],['categories','Work: Categories'],['work-reorder','Work: Reorder'],['work-covers','Work: Manage Folder'],['home','Home Page Photos'],['about-text','About Page']].map(([key,label])=>(
             <button key={key} onClick={()=>setTab(key)}
               className={`pb-4 text-[11px] font-light tracking-[0.2em] uppercase transition-colors ${tab===key?'text-black border-b-2 border-black -mb-px':'text-gray-400 hover:text-black'}`}>
               {label}
@@ -634,11 +714,30 @@ export default function Admin() {
               <div>
                 {(categories.length>0?categories:SEED_CATEGORIES).map(cat=>(
                   <div key={cat} className="flex items-center justify-between py-4 border-b border-gray-100">
-                    <span className="text-[13px] font-light text-gray-800">{cat}</span>
+                    {renamingFolder === cat ? (
+                      <div className="flex gap-2 flex-1 mr-4">
+                        <input type="text" value={renamingValue} onChange={e=>setRenamingValue(e.target.value)}
+                           onKeyDown={e=>e.key==='Enter'&&handleRenameCategory(cat, renamingValue)}
+                           autoFocus className="flex-1 border border-gray-200 px-3 py-2 text-[13px] font-light outline-none" />
+                        <button onClick={()=>handleRenameCategory(cat, renamingValue)}
+                           className="px-4 text-[10px] font-medium uppercase bg-black text-white">Save</button>
+                        <button onClick={()=>setRenamingFolder(null)}
+                           className="px-4 text-[10px] font-medium uppercase border border-gray-200 text-gray-400">Cancel</button>
+                      </div>
+                    ) : (
+                      <span className="text-[13px] font-light text-gray-800">{cat}</span>
+                    )}
+
                     <div className="flex items-center gap-4">
-                      <button onClick={()=>{setSelectedFolder(cat);setTab('upload')}}
+                      {renamingFolder !== cat && (
+                        <button onClick={()=>{setRenamingFolder(cat);setRenamingValue(cat)}}
+                          className="text-[11px] font-light tracking-[0.15em] uppercase text-blue-400 hover:text-blue-600 transition-colors">
+                          Rename
+                        </button>
+                      )}
+                      <button onClick={()=>{setSelectedFolder(cat);setTab('work-covers')}}
                         className="text-[11px] font-light tracking-[0.15em] uppercase text-gray-400 hover:text-black transition-colors">
-                        Upload →
+                        Manage →
                       </button>
                       <button onClick={()=>handleDeleteCategory(cat)}
                         className="text-[11px] font-light tracking-[0.15em] uppercase text-red-400 hover:text-red-600 transition-colors">
@@ -670,10 +769,10 @@ export default function Admin() {
           </div>
         )}
 
-        {/* ── Work Covers ── */}
+        {/* ── Work Covers (Now Manage Folder) ── */}
         {tab==='work-covers' && (
           <div className="space-y-8 mt-8">
-            <p className="text-[12px] font-light text-gray-400">Pick a category, then click any image to set it as the cover displaying on the /work grid.</p>
+            <p className="text-[12px] font-light text-gray-400">Select a category folder. You can drag to reorder photos, set the cover image, or delete photos individually. Reordering saves immediately.</p>
             <div>
               <label className="block text-[10px] font-light tracking-[0.2em] uppercase text-gray-400 mb-2">Category</label>
               <select value={selectedFolder} onChange={e=>setSelectedFolder(e.target.value)}
@@ -684,32 +783,70 @@ export default function Admin() {
               </select>
             </div>
             
-            {selectedFolder && galleryData.find(c => c.folder === selectedFolder) && (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {galleryData.find(c => c.folder === selectedFolder).images.map((url, i) => {
-                  const isCover = galleryData.find(c => c.folder === selectedFolder).cover === url;
-                  return (
-                    <div 
-                      key={i} 
-                      onClick={() => saveCover(selectedFolder, url)}
-                      className={`relative cursor-pointer group aspect-square ${isCover ? 'ring-2 ring-black' : 'hover:opacity-75 transition-opacity'}`}
-                    >
-                      <img src={url} alt="Cover option" className="w-full h-full object-cover" />
-                      {isCover && (
-                        <div className="absolute top-2 left-2 bg-black text-white text-[9px] font-light tracking-widest uppercase px-2 py-1">
-                          Cover
-                        </div>
-                      )}
-                      {savingCover === url && (
-                        <div className="absolute inset-0 bg-white/50 flex items-center justify-center">
-                          <span className="text-[10px] font-medium uppercase tracking-widest text-black">Saving…</span>
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
+            {/* Upload Box inside Manage Folder */}
+            {selectedFolder && (
+              <div className="pt-4 border-t border-gray-100">
+                <WorkUploadZone key={selectedFolder} folder={selectedFolder} password={password}
+                  onDone={()=>{
+                    showMsg(`✓ Photos uploaded to "${selectedFolder}". Live now.`)
+                    loadGallery()
+                  }} />
               </div>
             )}
+
+            {selectedFolder && galleryData.find(c => c.folder === selectedFolder) && (
+              <div className="pt-4 border-t border-gray-100">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-[11px] font-light tracking-[0.2em] uppercase text-black">
+                    Photos ({galleryData.find(c => c.folder === selectedFolder).images.length})
+                  </h3>
+                  {savingWorkOrder && (
+                    <span className="text-[10px] text-blue-500 uppercase tracking-widest">Saving…</span>
+                  )}
+                </div>
+                
+                <SortableList
+                  items={galleryData.find(c => c.folder === selectedFolder).images}
+                  onReorder={urls => saveWorkOrder(selectedFolder, urls)}
+                  gridClassName="grid grid-cols-2 md:grid-cols-3 gap-2"
+                  renderItem={(url, i) => {
+                    const isCover = galleryData.find(c => c.folder === selectedFolder).cover === url;
+                    return (
+                      <div className="relative group aspect-square">
+                        <img src={url} alt="Folder photo" className="w-full h-full object-cover" />
+                        
+                        {isCover && (
+                          <div className="absolute top-2 left-2 bg-black text-white text-[9px] font-light tracking-widest uppercase px-2 py-1">
+                            Cover
+                          </div>
+                        )}
+                        
+                        {/* Hover Overlay Actions */}
+                        <div className="absolute inset-0 bg-white/0 group-hover:bg-white/80 transition-all flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 gap-3">
+                          {!isCover && (
+                            <button onClick={()=>saveCover(selectedFolder, url)}
+                              className="text-[10px] uppercase tracking-widest text-black border border-black px-3 py-1 hover:bg-black hover:text-white transition-colors">
+                              Set Cover
+                            </button>
+                          )}
+                          <button onClick={()=>handleDeleteWorkPhoto(selectedFolder, url)} disabled={deletingPhoto===url}
+                            className="text-[10px] uppercase tracking-widest text-red-500 hover:text-red-700 font-medium">
+                            {deletingPhoto === url ? 'Removing…' : 'Delete'}
+                          </button>
+                        </div>
+                        
+                        {savingCover === url && (
+                          <div className="absolute inset-0 bg-white/50 flex items-center justify-center">
+                            <span className="text-[10px] font-medium uppercase tracking-widest text-black">Saving…</span>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  }}
+                />
+              </div>
+            )}
+            
             {selectedFolder && !galleryData.find(c => c.folder === selectedFolder) && (
               <p className="text-[12px] font-light text-gray-400">Loading images or folder is empty...</p>
             )}

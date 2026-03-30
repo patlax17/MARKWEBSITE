@@ -120,5 +120,24 @@ export default async function handler(req, res) {
     }
   }
 
+  // PUT — rename category
+  if (req.method === 'PUT') {
+    let body = '';
+    for await (const chunk of req) body += chunk;
+    const { oldName, newName } = JSON.parse(body);
+
+    if (!oldName?.trim() || !newName?.trim()) return res.status(400).json({ error: 'Missing old or new name' });
+
+    try {
+      await cloudinary.api.rename_folder(`mark-portfolio/${oldName.trim()}`, `mark-portfolio/${newName.trim()}`);
+      return res.status(200).json({ success: true });
+    } catch (err) {
+      if (err.error?.message?.includes('Cannot rename folder to itself')) {
+        return res.status(200).json({ success: true });
+      }
+      return res.status(500).json({ error: err.error?.message || err.message });
+    }
+  }
+
   return res.status(405).json({ error: 'Method not allowed' });
 }

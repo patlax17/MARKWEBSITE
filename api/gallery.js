@@ -41,16 +41,32 @@ export default async function handler(req, res) {
 
     // Try to fetch custom covers config
     let coversConfig = {};
+    let workOrderConfig = {};
     try {
-      const coversResource = await cloudinary.api.resource('mark-portfolio/_config/covers', { resource_type: 'raw' });
-      const coversRes = await fetch(coversResource.secure_url);
+      const [coversRes, orderRes] = await Promise.all([
+        fetch('https://res.cloudinary.com/' + process.env.CLOUDINARY_CLOUD_NAME + '/raw/upload/mark-portfolio/_config/covers'),
+        fetch('https://res.cloudinary.com/' + process.env.CLOUDINARY_CLOUD_NAME + '/raw/upload/mark-portfolio/_config/work-order')
+      ]);
+      
       if (coversRes.ok) {
-        const data = await coversRes.json();
-        if (data.covers) coversConfig = data.covers;
+        const coverData = await coversRes.json();
+        coversConfig = coverData.covers || {};
+      }
+      if (orderRes.ok) {
+        const orderData = await orderRes.json();
+        workOrderConfig = orderData.order || {};
       }
     } catch {
-      // Config not created yet, ignore
+      // Configuration fetch failed, keep fallbacks
     }
+
+    const applyOrder = (items, order) => {
+      if (!order || order.length === 0) return items;
+      // Filter the items using the exact match for ordered URLs
+      const ordered = order.filter(url => items.includes(url));
+      const rest = items.filter(url => !order.includes(url));
+      return [...ordered, ...rest];
+    };
 
     // Build the categories array
     const categories = Object.entries(folderMap)
@@ -60,7 +76,7 @@ export default async function handler(req, res) {
         title: name.toUpperCase(),
         folder: name,
         cover: coversConfig[name] || images[0],
-        images,
+        images: applyOrder(images, workOrderConfig[name] || []),
       }))
       .sort((a, b) => a.folder.localeCompare(b.folder));
 

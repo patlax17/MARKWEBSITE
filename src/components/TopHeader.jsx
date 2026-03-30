@@ -35,7 +35,7 @@ export default function TopHeader() {
         {/* Left — Name */}
         <NavLink
           to="/"
-          className="text-xs font-light tracking-[0.2em] uppercase text-black hover:opacity-40 transition-opacity whitespace-nowrap"
+          className="text-xs font-light tracking-[0.2em] uppercase text-black hover:opacity-40 transition-opacity whitespace-nowrap cursor-pointer"
         >
           Mark Militar
         </NavLink>
@@ -113,7 +113,7 @@ export default function TopHeader() {
       <header className="md:hidden fixed top-0 left-0 right-0 z-50 bg-white flex items-center justify-between px-6 py-5">
         <NavLink
           to="/"
-          className="text-[11px] font-light tracking-widest uppercase text-black"
+          className="text-[11px] font-light tracking-widest uppercase text-black cursor-pointer"
           onClick={() => setMenuOpen(false)}
         >
           Mark Militar

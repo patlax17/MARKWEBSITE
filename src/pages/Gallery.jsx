@@ -1,17 +1,17 @@
 import { useParams, Link } from 'react-router-dom'
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import TopHeader from '../components/TopHeader'
 import Lightbox from '../components/Lightbox'
-import galleryData from '../data/work_gallery.json'
+import localData from '../data/work_gallery.json'
 
 function MasonryImage({ src, index, onClick }) {
   const [loaded, setLoaded] = useState(false)
   return (
-    <div className="masonry-item mb-4 overflow-hidden" onClick={() => onClick(index)}>
+    <div className="masonry-item mb-4 overflow-hidden cursor-pointer" onClick={() => onClick(index)}>
       <img
         src={src}
         alt="Mark Militar Photography"
-        className={`w-full h-auto transition-all duration-700 ease-in-out cursor-pointer hover:opacity-80 ${loaded ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}
+        className={`w-full h-auto transition-all duration-700 ease-in-out hover:opacity-80 ${loaded ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}
         onLoad={() => setLoaded(true)}
         loading="lazy"
       />
@@ -22,8 +22,26 @@ function MasonryImage({ src, index, onClick }) {
 export default function Gallery() {
   const { categoryId } = useParams()
   const [lightboxIndex, setLightboxIndex] = useState(null)
+  const [category, setCategory] = useState(null)
 
-  const category = galleryData.find(c => c.id === categoryId)
+  useEffect(() => {
+    // Try live API first
+    fetch('/api/gallery')
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0) {
+          const found = data.find(c => c.id === categoryId)
+          if (found) { setCategory(found); return }
+        }
+        // Fallback to local JSON
+        const local = localData.find(c => c.id === categoryId)
+        setCategory(local || null)
+      })
+      .catch(() => {
+        const local = localData.find(c => c.id === categoryId)
+        setCategory(local || null)
+      })
+  }, [categoryId])
 
   const openLightbox = useCallback((i) => setLightboxIndex(i), [])
   const closeLightbox = useCallback(() => setLightboxIndex(null), [])
@@ -33,31 +51,36 @@ export default function Gallery() {
     setLightboxIndex(i => (i < category.images.length - 1 ? i + 1 : i))
   }, [category])
 
-  if (!category) return null
+  if (!category) {
+    return (
+      <>
+        <TopHeader />
+        <div className="pt-40 text-center text-[11px] font-light tracking-[0.2em] uppercase text-gray-400">
+          Loading…
+        </div>
+      </>
+    )
+  }
 
   return (
     <>
       <TopHeader />
-
       <main className="pt-24 md:pt-32 px-6 md:px-10 pb-20">
-        {/* Back button */}
-        <div className="mb-12">
+        <div className="mb-10">
           <Link
             to="/work"
             className="text-[11px] font-light tracking-[0.2em] uppercase text-black hover:opacity-40 transition-opacity"
           >
-            ← Back
+            ← Back to Work
           </Link>
         </div>
 
-        {/* Category title */}
         <header className="mb-16 text-center">
           <h1 className="text-[13px] font-light tracking-[0.2em] uppercase text-black">
             {category.title}
           </h1>
         </header>
 
-        {/* Masonry grid */}
         <div className="masonry-grid max-w-[1920px] mx-auto overflow-hidden">
           {category.images.map((img, i) => (
             <MasonryImage

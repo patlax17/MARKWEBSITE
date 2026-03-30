@@ -253,6 +253,8 @@ function HomePhotosTab({ password, showMsg }) {
 
   const handleDelete = async (img) => {
     if (!confirm(`Remove "${img.filename}" from the home page?`)) return
+    // Optimistic: remove immediately so it vanishes at once
+    setHomeImages(prev => prev.filter(i => i.publicId !== img.publicId))
     setDeleting(img.publicId)
     try {
       await fetch('/api/home-gallery', {
@@ -261,8 +263,11 @@ function HomePhotosTab({ password, showMsg }) {
         body: JSON.stringify({ publicId: img.publicId }),
       })
       showMsg(`✓ "${img.filename}" removed.`)
-      loadHomeImages()
-    } catch { showMsg('✗ Failed to delete.') }
+    } catch {
+      // Restore on failure
+      setHomeImages(prev => [...prev, img])
+      showMsg('✗ Failed to delete.')
+    }
     setDeleting(null)
   }
 
@@ -439,6 +444,9 @@ export default function Admin() {
 
   const handleDeleteCategory = async (name) => {
     if (!confirm(`Delete "${name}" and ALL its photos permanently? This cannot be undone.`)) return
+    // Optimistic: remove immediately — don't wait for Cloudinary search to reindex
+    setCategories(prev => prev.filter(c => c !== name))
+    setCatOrder(prev => prev.filter(c => c !== name))
     showMsg(`Deleting "${name}"…`)
     try {
       const res = await fetch('/api/categories', {
@@ -448,8 +456,11 @@ export default function Admin() {
       })
       if (!res.ok) throw new Error()
       showMsg(`✓ "${name}" deleted.`)
-      await loadCategories(password)
-    } catch { showMsg('✗ Failed to delete.') }
+    } catch {
+      // Restore on failure
+      setCategories(prev => [...prev, name])
+      showMsg('✗ Failed to delete.')
+    }
   }
 
   const displayCategories = catOrder.length > 0

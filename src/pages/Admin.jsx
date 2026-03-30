@@ -453,7 +453,7 @@ export default function Admin() {
   return (
     <div className="min-h-screen bg-white">
       <header className="fixed top-0 left-0 right-0 z-50 bg-white flex items-center justify-between px-10 py-6 border-b border-gray-100">
-        <span className="text-xs font-light tracking-[0.2em] uppercase text-black">Mark Militar — Admin</span>
+        <a href="/" className="text-xs font-light tracking-[0.2em] uppercase text-black hover:opacity-40 transition-opacity cursor-pointer">Mark Militar</a>
         <button onClick={()=>setAuthenticated(false)} className="text-[11px] font-light tracking-[0.15em] uppercase text-gray-400 hover:text-black transition-colors">Sign Out</button>
       </header>
 

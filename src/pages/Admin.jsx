@@ -12,62 +12,88 @@ const SEED_CATEGORIES = [
 ]
 
 // ─── Shared pointer-based drag sort hook ──────────────────────────────────────
-// Works on BOTH mouse (desktop) and touch (mobile) via Pointer Events API
+// Works on BOTH mouse (desktop) and touch (mobile) via Pointer Events API.
+// Uses global window listeners so re-renders don't lose the drag state.
 
 function usePointerSort(items, onReorder) {
   const [list, setList] = useState(items)
   const listRef = useRef(items)
   const dragIdx = useRef(null)
+  const listeners = useRef(null)
 
   useEffect(() => { setList(items); listRef.current = items }, [items])
 
+  // Cleanup on unmount
+  useEffect(() => () => {
+    if (listeners.current) {
+      window.removeEventListener('pointermove', listeners.current.onMove)
+      window.removeEventListener('pointerup',   listeners.current.onUp)
+      window.removeEventListener('pointercancel', listeners.current.onUp)
+    }
+  }, [])
+
   const onPointerDown = (e, i) => {
-    e.currentTarget.setPointerCapture(e.pointerId)
-    dragIdx.current = i
-  }
-
-  const onPointerMove = (e, selfIdx) => {
-    if (dragIdx.current === null) return
     e.preventDefault()
-    // Temporarily hide this element so elementFromPoint sees what's beneath
-    const el = e.currentTarget
-    el.style.pointerEvents = 'none'
-    const under = document.elementFromPoint(e.clientX, e.clientY)
-    el.style.pointerEvents = ''
-    if (!under) return
-    const target = under.closest('[data-si]')
-    if (!target) return
-    const targetIdx = parseInt(target.dataset.si)
-    if (isNaN(targetIdx) || targetIdx === dragIdx.current) return
-    const next = [...listRef.current]
-    const [moved] = next.splice(dragIdx.current, 1)
-    next.splice(targetIdx, 0, moved)
-    dragIdx.current = targetIdx
-    listRef.current = next
-    setList([...next])
+    dragIdx.current = i
+
+    const onMove = (ev) => {
+      if (dragIdx.current === null) return
+      ev.preventDefault()
+      // Find which list item the pointer is currently over
+      const under = document.elementFromPoint(ev.clientX, ev.clientY)
+      if (!under) return
+      const target = under.closest('[data-si]')
+      if (!target) return
+      const targetIdx = parseInt(target.dataset.si)
+      if (isNaN(targetIdx) || targetIdx === dragIdx.current) return
+      // Swap in list
+      const next = [...listRef.current]
+      const [moved] = next.splice(dragIdx.current, 1)
+      next.splice(targetIdx, 0, moved)
+      dragIdx.current = targetIdx
+      listRef.current = next
+      setList([...next])
+    }
+
+    const onUp = () => {
+      if (dragIdx.current !== null) {
+        onReorder(listRef.current)
+        dragIdx.current = null
+      }
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup',   onUp)
+      window.removeEventListener('pointercancel', onUp)
+      listeners.current = null
+    }
+
+    // Remove any previous stale listeners
+    if (listeners.current) {
+      window.removeEventListener('pointermove', listeners.current.onMove)
+      window.removeEventListener('pointerup',   listeners.current.onUp)
+      window.removeEventListener('pointercancel', listeners.current.onUp)
+    }
+
+    window.addEventListener('pointermove', onMove, { passive: false })
+    window.addEventListener('pointerup',   onUp)
+    window.addEventListener('pointercancel', onUp)
+    listeners.current = { onMove, onUp }
   }
 
-  const onPointerUp = () => {
-    if (dragIdx.current !== null) { onReorder(listRef.current); dragIdx.current = null }
-  }
-
-  return { list, onPointerDown, onPointerMove, onPointerUp }
+  return { list, onPointerDown }
 }
 
 // ─── Drag-to-reorder list (for categories) ────────────────────────────────────
 
 function SortableList({ items, renderItem, onReorder }) {
-  const { list, onPointerDown, onPointerMove, onPointerUp } = usePointerSort(items, onReorder)
+  const { list, onPointerDown } = usePointerSort(items, onReorder)
 
   return (
     <ul className="space-y-2">
       {list.map((item, i) => (
         <li
-          key={typeof item === 'object' ? (item.publicId || i) : (item + i)}
+          key={typeof item === 'object' ? (item.publicId || item) : item}
           data-si={i}
           onPointerDown={(e) => onPointerDown(e, i)}
-          onPointerMove={(e) => onPointerMove(e, i)}
-          onPointerUp={onPointerUp}
           className="flex items-center gap-4 p-3 border border-gray-100 bg-white cursor-grab active:cursor-grabbing hover:border-gray-300 transition-colors select-none"
           style={{ touchAction: 'none' }}
         >
@@ -82,18 +108,15 @@ function SortableList({ items, renderItem, onReorder }) {
 // ─── Masonry drag-to-reorder (for home page photos) ──────────────────────────
 
 function MasonryReorder({ images, onReorder }) {
-  const { list, onPointerDown, onPointerMove, onPointerUp } = usePointerSort(images, onReorder)
+  const { list, onPointerDown } = usePointerSort(images, onReorder)
 
   return (
-    // Same CSS class as live homepage — responsive 2col mobile, 3col desktop
     <div className="masonry-grid">
       {list.map((img, i) => (
         <div
           key={img.publicId}
           data-si={i}
           onPointerDown={(e) => onPointerDown(e, i)}
-          onPointerMove={(e) => onPointerMove(e, i)}
-          onPointerUp={onPointerUp}
           className="masonry-item group select-none relative"
           style={{ cursor: 'grab', touchAction: 'none' }}
         >
@@ -102,7 +125,6 @@ function MasonryReorder({ images, onReorder }) {
             alt={img.filename}
             style={{ width: '100%', height: 'auto', display: 'block' }}
           />
-          {/* Drag handle overlay */}
           <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
             <span style={{ fontSize: '28px', color: 'white', lineHeight: 1 }}>⠿</span>
           </div>

@@ -1,7 +1,26 @@
+import { useState, useEffect } from 'react'
 import TopHeader from '../components/TopHeader'
 
+const DEFAULT_TEXT = `Mark Militar is a photographer and visual storyteller based in New York. His work spans sports, portraiture, documentary, and travel — each image rooted in a commitment to authentic, unmanipulated moments.
+
+With a background in both editorial and long-form documentary work, Mark approaches every shoot with patience and intention. He believes light was never just light — it is the architecture of feeling.
+
+His editorial work has taken him across New York City's boroughs, to Portugal, Japan, and beyond — always in pursuit of the quiet, unrepeatable instant.
+
+All work published with intent.`
+
 export default function About() {
+  const [aboutText, setAboutText] = useState(DEFAULT_TEXT)
+
+  useEffect(() => {
+    fetch('/api/about')
+      .then(res => res.json())
+      .then(data => { if (data.text) setAboutText(data.text) })
+      .catch(() => {})
+  }, [])
+
   return (
+
     <>
       <TopHeader />
 
@@ -14,25 +33,8 @@ export default function About() {
           Mark Militar
         </h1>
 
-        <div className="flex flex-col gap-5 text-sm font-light text-black leading-loose opacity-80">
-          <p>
-            Mark Militar is a photographer and visual storyteller based in New York.
-            His work spans sports, portraiture, documentary, and travel — each
-            image rooted in a commitment to authentic, unmanipulated moments.
-          </p>
-          <p>
-            With a background in both editorial and long-form documentary work,
-            Mark approaches every shoot with patience and intention. He believes
-            light was never just light — it is the architecture of feeling.
-          </p>
-          <p>
-            His editorial work has taken him across New York City's boroughs,
-            to Portugal, Japan, and beyond — always in pursuit of the quiet,
-            unrepeatable instant.
-          </p>
-          <p>
-            All work published with intent.
-          </p>
+        <div className="flex flex-col gap-5 text-sm font-light text-black leading-loose opacity-80 whitespace-pre-line">
+          {aboutText}
         </div>
 
         <div className="mt-14 flex flex-col gap-3">

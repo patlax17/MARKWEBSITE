@@ -420,6 +420,8 @@ export default function Admin() {
   const [catOrder, setCatOrder]         = useState([])
   const [savingCat, setSavingCat]       = useState(false)
   const [msg, setMsg]                   = useState('')
+  const [aboutText, setAboutText]       = useState('')
+  const [savingAbout, setSavingAbout]   = useState(false)
 
   const showMsg = (text) => { setMsg(text); setTimeout(() => setMsg(''), 5000) }
 
@@ -441,12 +443,32 @@ export default function Admin() {
     } catch {}
   }
 
+  const loadAboutText = async () => {
+    try {
+      const data = await fetch('/api/about').then(r => r.json())
+      if (data.text) setAboutText(data.text)
+    } catch {}
+  }
+
   const handleLogin = async (e) => {
     e.preventDefault()
     const res = await fetch('/api/categories', { headers: { 'x-admin-password': password } })
     if (res.status === 401) { setAuthError(true); return }
     setAuthenticated(true); setAuthError(false)
-    await Promise.all([loadCategories(password), loadCatOrder()])
+    await Promise.all([loadCategories(password), loadCatOrder(), loadAboutText()])
+  }
+
+  const saveAboutText = async () => {
+    setSavingAbout(true)
+    try {
+      await fetch('/api/about', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-password': password },
+        body: JSON.stringify({ text: aboutText }),
+      })
+      showMsg('✓ About text saved! It is now live.')
+    } catch { showMsg('✗ Failed to save about text.') }
+    setSavingAbout(false)
   }
 
   const saveCatOrder = async (order) => {
@@ -534,7 +556,7 @@ export default function Admin() {
 
         {/* Main Tabs — always visible */}
         <div className="flex flex-wrap gap-6 mb-12 border-b border-gray-100">
-          {[['upload','Work: Upload'],['categories','Work: Categories'],['work-reorder','Work: Reorder'],['home','Home Page Photos']].map(([key,label])=>(
+          {[['upload','Work: Upload'],['categories','Work: Categories'],['work-reorder','Work: Reorder'],['home','Home Page Photos'],['about-text','About Page']].map(([key,label])=>(
             <button key={key} onClick={()=>setTab(key)}
               className={`pb-4 text-[11px] font-light tracking-[0.2em] uppercase transition-colors ${tab===key?'text-black border-b-2 border-black -mb-px':'text-gray-400 hover:text-black'}`}>
               {label}
@@ -626,6 +648,27 @@ export default function Admin() {
       {tab==='home' && (
         <div className="pt-4 px-4 md:px-6 pb-20">
           <HomePhotosTab password={password} showMsg={showMsg} />
+        </div>
+      )}
+
+      {/* ── About Text ── */}
+      {tab==='about-text' && (
+        <div className="space-y-6 pt-4 px-6 max-w-2xl mx-auto">
+          <p className="text-[12px] font-light text-gray-400">
+            Edit the text that appears on your /about page. Formatting is preserved.
+          </p>
+          <textarea
+            value={aboutText}
+            onChange={(e) => setAboutText(e.target.value)}
+            className="w-full h-96 border border-gray-200 p-6 text-[13px] font-light leading-loose text-black outline-none focus:border-black resize-y"
+          />
+          <button
+            onClick={saveAboutText}
+            disabled={savingAbout}
+            className="w-full py-4 text-[11px] font-light tracking-[0.2em] uppercase bg-black text-white hover:opacity-70 disabled:opacity-30 transition-opacity"
+          >
+            {savingAbout ? 'Saving…' : 'Save Changes'}
+          </button>
         </div>
       )}
 

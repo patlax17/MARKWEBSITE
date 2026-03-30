@@ -10,13 +10,17 @@ His editorial work has taken him across New York City's boroughs, to Portugal, J
 All work published with intent.`
 
 export default function About() {
-  const [aboutText, setAboutText] = useState(DEFAULT_TEXT)
+  const [aboutText, setAboutText] = useState(null)
 
   useEffect(() => {
     fetch('/api/about')
       .then(res => res.json())
-      .then(data => { if (data.text) setAboutText(data.text) })
-      .catch(() => {})
+      .then(data => {
+        setAboutText(data.text ? data.text : DEFAULT_TEXT)
+      })
+      .catch(() => {
+        setAboutText(DEFAULT_TEXT)
+      })
   }, [])
 
   return (
@@ -34,8 +38,19 @@ export default function About() {
         </h1>
 
         <div className="flex flex-col gap-5 text-sm font-light text-black leading-loose opacity-80 whitespace-pre-line">
-          {aboutText}
+          {aboutText === null ? (
+            <div className="animate-pulse flex flex-col gap-3">
+              <div className="h-3 w-full bg-gray-50 mb-3" />
+              <div className="h-3 w-11/12 bg-gray-50" />
+              <div className="h-3 w-10/12 bg-gray-50" />
+              <div className="h-3 w-full bg-gray-50 mt-4" />
+              <div className="h-3 w-9/12 bg-gray-50" />
+            </div>
+          ) : (
+            aboutText
+          )}
         </div>
+
 
         <div className="mt-14 flex flex-col gap-3">
           <a

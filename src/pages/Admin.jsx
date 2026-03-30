@@ -96,12 +96,9 @@ function MasonryReorder({ images, onReorder }) {
             style={{ width: '100%', height: 'auto', display: 'block' }}
             draggable={false}
           />
-          {/* Hover overlay: shows position + drag handle */}
-          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
-            <span style={{ fontSize: '24px', color: 'white', lineHeight: 1 }}>⠿</span>
-            <span style={{ fontSize: '11px', fontWeight: 300, color: 'white', letterSpacing: '0.15em', marginTop: '4px' }}>
-              #{i + 1}
-            </span>
+          {/* Hover overlay: drag handle only */}
+          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
+            <span style={{ fontSize: '28px', color: 'white', lineHeight: 1 }}>⠿</span>
           </div>
         </div>
       ))}

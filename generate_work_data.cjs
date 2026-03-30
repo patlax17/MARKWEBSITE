@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const publicWorkPath = path.join(__dirname, 'public', 'work_gallery');
+const publicWorkPath = path.join(__dirname, 'public', 'work');
 const dataOutputPath = path.join(__dirname, 'src', 'data', 'work_gallery.json');
 
 // Each entry: { id, title, folder }
@@ -69,7 +69,7 @@ targetFolders.forEach(({ id, title, folder }) => {
 
   // Build URL-safe paths — encode spaces as %20, preserve apostrophes as-is
   const urlFolder = folder.replace(/ /g, '%20');
-  const toUrl = (file) => `/work_gallery/${urlFolder}/${file.replace(/ /g, '%20')}`;
+  const toUrl = (file) => `/work/${urlFolder}/${file.replace(/ /g, '%20').replace(/\.[^.]+$/, '.jpg')}`;
 
   categories.push({
     id,

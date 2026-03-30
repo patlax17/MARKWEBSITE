@@ -85,10 +85,11 @@ export default async function handler(req, res) {
 
     try {
       // 1. Find and delete all resources in the folder
-      const search = await cloudinary.search
-        .expression(`public_id:mark-portfolio/${name.trim()}/*`)
-        .max_results(500)
-        .execute();
+      const search = await cloudinary.api.resources({
+        type: 'upload',
+        prefix: `mark-portfolio/${name.trim()}/`,
+        max_results: 500
+      });
 
       if (search.resources.length > 0) {
         const publicIds = search.resources.map(r => r.public_id);
@@ -122,10 +123,11 @@ export default async function handler(req, res) {
       } catch (folderErr) {
         // Fallback for flat-namespace Cloudinary accounts (Dynamic Folders)
         if (folderErr.error?.message?.includes('Cannot find source folder')) {
-          const search = await cloudinary.search
-            .expression(`public_id:mark-portfolio/${oldName.trim()}/*`)
-            .max_results(500)
-            .execute();
+          const search = await cloudinary.api.resources({
+            type: 'upload',
+            prefix: `mark-portfolio/${oldName.trim()}/`,
+            max_results: 500
+          });
             
           if (search.resources.length > 0) {
             await Promise.all(search.resources.map(r => {

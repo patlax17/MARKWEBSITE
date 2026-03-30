@@ -357,6 +357,21 @@ export default function Admin() {
     setCreating(false)
   }
 
+  const handleDeleteCategory = async (name) => {
+    if (!confirm(`Delete "${name}" and ALL its photos permanently? This cannot be undone.`)) return
+    showMsg(`Deleting "${name}"…`)
+    try {
+      const res = await fetch('/api/categories', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json', 'x-admin-password': password },
+        body: JSON.stringify({ name }),
+      })
+      if (!res.ok) throw new Error()
+      showMsg(`✓ "${name}" deleted.`)
+      await loadCategories(password)
+    } catch { showMsg('✗ Failed to delete.') }
+  }
+
   const displayCategories = catOrder.length > 0
     ? [...catOrder, ...categories.filter(c => !catOrder.includes(c))]
     : categories.length > 0 ? categories : SEED_CATEGORIES
@@ -442,10 +457,16 @@ export default function Admin() {
                 {(categories.length>0?categories:SEED_CATEGORIES).map(cat=>(
                   <div key={cat} className="flex items-center justify-between py-4 border-b border-gray-100">
                     <span className="text-[13px] font-light text-gray-800">{cat}</span>
-                    <button onClick={()=>{setSelectedFolder(cat);setTab('upload')}}
-                      className="text-[11px] font-light tracking-[0.15em] uppercase text-gray-400 hover:text-black transition-colors">
-                      Upload →
-                    </button>
+                    <div className="flex items-center gap-4">
+                      <button onClick={()=>{setSelectedFolder(cat);setTab('upload')}}
+                        className="text-[11px] font-light tracking-[0.15em] uppercase text-gray-400 hover:text-black transition-colors">
+                        Upload →
+                      </button>
+                      <button onClick={()=>handleDeleteCategory(cat)}
+                        className="text-[11px] font-light tracking-[0.15em] uppercase text-red-400 hover:text-red-600 transition-colors">
+                        Delete
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>

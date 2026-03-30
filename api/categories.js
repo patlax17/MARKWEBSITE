@@ -46,7 +46,7 @@ async function getAllFolders() {
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-admin-password');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
@@ -83,6 +83,38 @@ export default async function handler(req, res) {
       }
     }
     return res.status(200).json({ success: true, name: name.trim() });
+  }
+
+  // DELETE — remove a category and all its photos
+  if (req.method === 'DELETE') {
+    let body = '';
+    for await (const chunk of req) body += chunk;
+    const { name } = JSON.parse(body);
+    if (!name?.trim()) return res.status(400).json({ error: 'Category name required' });
+
+    try {
+      // 1. Find and delete all resources in the folder
+      const search = await cloudinary.search
+        .expression(`public_id:mark-portfolio/${name.trim()}/*`)
+        .max_results(500)
+        .execute();
+
+      if (search.resources.length > 0) {
+        const publicIds = search.resources.map(r => r.public_id);
+        await cloudinary.api.delete_resources(publicIds);
+      }
+
+      // 2. Delete the folder itself
+      try {
+        await cloudinary.api.delete_folder(`mark-portfolio/${name.trim()}`);
+      } catch {
+        // Folder may already be gone — that's fine
+      }
+
+      return res.status(200).json({ success: true });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
   }
 
   return res.status(405).json({ error: 'Method not allowed' });

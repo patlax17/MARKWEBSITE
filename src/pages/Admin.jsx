@@ -79,7 +79,7 @@ function MasonryReorder({ images, onReorder }) {
   }
 
   return (
-    <div style={{ columnCount: 3, columnGap: '6px' }}>
+    <div className="masonry-grid">
       {list.map((img, i) => (
         <div
           key={img.publicId}
@@ -87,8 +87,8 @@ function MasonryReorder({ images, onReorder }) {
           onDragStart={(e) => handleDragStart(e, i)}
           onDragOver={(e) => handleDragOver(e, i)}
           onDrop={handleDrop}
-          style={{ breakInside: 'avoid', marginBottom: '6px', position: 'relative', cursor: 'grab' }}
-          className="group select-none"
+          className="masonry-item group select-none relative"
+          style={{ cursor: 'grab' }}
         >
           <img
             src={img.url}
@@ -96,8 +96,8 @@ function MasonryReorder({ images, onReorder }) {
             style={{ width: '100%', height: 'auto', display: 'block' }}
             draggable={false}
           />
-          {/* Drag handle overlay — shows position number + drag icon */}
-          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all flex flex-col items-center justify-center opacity-0 group-hover:opacity-100">
+          {/* Hover overlay: shows position + drag handle */}
+          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
             <span style={{ fontSize: '24px', color: 'white', lineHeight: 1 }}>⠿</span>
             <span style={{ fontSize: '11px', fontWeight: 300, color: 'white', letterSpacing: '0.15em', marginTop: '4px' }}>
               #{i + 1}

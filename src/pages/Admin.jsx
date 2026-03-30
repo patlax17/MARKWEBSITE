@@ -1,16 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
 
-const SEED_CATEGORIES = [
-  "2025 Big East Men's Basketball Championship",
-  "2025 CUNYAC Men's Championship",
-  "Curtis High School Boys Basketball Media Day 2025",
-  "High School Football",
-  "Japan",
-  "Liam Murphy x Chris Ledlum Basketball Camp",
-  "Nike NYvsNY Focus 2025",
-  "Staten Island Hoops",
-]
-
 // ─── Shared pointer-based drag sort hook ──────────────────────────────────────
 // Works on BOTH mouse (desktop) and touch (mobile) via Pointer Events API.
 // Uses global window listeners so re-renders don't lose the drag state.
@@ -632,7 +621,7 @@ export default function Admin() {
 
   const displayCategories = catOrder.length > 0
     ? [...catOrder, ...categories.filter(c => !catOrder.includes(c))]
-    : categories.length > 0 ? categories : SEED_CATEGORIES
+    : categories
 
   // ─── Login ─────────────────────────────────────────────────────────────────
   if (!authenticated) return (
@@ -680,7 +669,7 @@ export default function Admin() {
               <label className="block text-[10px] font-light tracking-[0.2em] uppercase text-gray-400 mb-2">Category</label>
               <select value={selectedFolder} onChange={e=>setSelectedFolder(e.target.value)}
                 className="w-full border border-gray-200 px-4 py-3 text-[13px] font-light outline-none focus:border-black appearance-none bg-white">
-                {(categories.length > 0 ? categories : SEED_CATEGORIES).map(cat=>(
+                {categories.map(cat=>(
                   <option key={cat} value={cat}>{cat}</option>
                 ))}
               </select>
@@ -710,9 +699,9 @@ export default function Admin() {
               </div>
             </div>
             <div>
-              <h2 className="text-[11px] font-light tracking-[0.2em] uppercase text-black mb-6">Existing ({(categories.length||SEED_CATEGORIES.length)})</h2>
+              <h2 className="text-[11px] font-light tracking-[0.2em] uppercase text-black mb-6">Existing ({categories.length})</h2>
               <div>
-                {(categories.length>0?categories:SEED_CATEGORIES).map(cat=>(
+                {categories.map(cat=>(
                   <div key={cat} className="flex items-center justify-between py-4 border-b border-gray-100">
                     {renamingFolder === cat ? (
                       <div className="flex gap-2 flex-1 mr-4">
@@ -777,7 +766,7 @@ export default function Admin() {
               <label className="block text-[10px] font-light tracking-[0.2em] uppercase text-gray-400 mb-2">Category</label>
               <select value={selectedFolder} onChange={e=>setSelectedFolder(e.target.value)}
                 className="w-full border border-gray-200 px-4 py-3 text-[13px] font-light outline-none focus:border-black appearance-none bg-white">
-                {(categories.length > 0 ? categories : SEED_CATEGORIES).map(cat=>(
+                {categories.map(cat=>(
                   <option key={cat} value={cat}>{cat}</option>
                 ))}
               </select>

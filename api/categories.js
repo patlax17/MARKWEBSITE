@@ -8,18 +8,6 @@ cloudinary.config({
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'mark2025';
 
-// Seed list — always available even if Cloudinary search has no extras
-const SEED_CATEGORIES = [
-  "2025 Big East Men's Basketball Championship",
-  "2025 CUNYAC Men's Championship",
-  "Curtis High School Boys Basketball Media Day 2025",
-  "High School Football",
-  "Japan",
-  "Liam Murphy x Chris Ledlum Basketball Camp",
-  "Nike NYvsNY Focus 2025",
-  "Staten Island Hoops",
-];
-
 async function getAllFolders() {
   try {
     // Search for all resources under mark-portfolio and extract unique subfolders
@@ -32,7 +20,7 @@ async function getAllFolders() {
     // Folders to never show as work categories
     const EXCLUDED = new Set(['home', '_config']);
 
-    const folderSet = new Set(SEED_CATEGORIES);
+    const folderSet = new Set();
     for (const r of result.resources) {
       const parts = r.public_id.split('/');
       // public_id = mark-portfolio/FolderName/filename → parts[1] is the folder
@@ -42,8 +30,8 @@ async function getAllFolders() {
     }
     return Array.from(folderSet).sort();
   } catch {
-    // Fallback to seed list if search fails
-    return [...SEED_CATEGORIES].sort();
+    // Fallback if search fails
+    return [];
   }
 }
 

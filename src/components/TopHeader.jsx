@@ -37,7 +37,7 @@ export default function TopHeader() {
           to="/"
           className="text-xs font-light tracking-[0.2em] uppercase text-black hover:opacity-40 transition-opacity whitespace-nowrap cursor-pointer"
         >
-          Mark Militar
+          Mark Militar | MarkShotThis
         </NavLink>
 
         {/* Center — Nav */}
@@ -116,7 +116,7 @@ export default function TopHeader() {
           className="text-[11px] font-light tracking-widest uppercase text-black cursor-pointer"
           onClick={() => setMenuOpen(false)}
         >
-          Mark Militar
+          Mark Militar | MarkShotThis
         </NavLink>
         <button
           onClick={() => setMenuOpen(!menuOpen)}

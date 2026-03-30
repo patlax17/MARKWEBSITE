@@ -9,9 +9,10 @@ export default function Work() {
   useEffect(() => {
     const applyOrder = (cats, order) => {
       if (!order || order.length === 0) return cats
-      const map = Object.fromEntries(cats.map(c => [c.title, c]))
-      const ordered = order.map(title => map[title]).filter(Boolean)
-      const rest = cats.filter(c => !order.includes(c.title))
+      // Order stores original folder names; cats have both .folder and .title
+      const map = Object.fromEntries(cats.map(c => [c.folder, c]))
+      const ordered = order.map(folderName => map[folderName]).filter(Boolean)
+      const rest = cats.filter(c => !order.includes(c.folder))
       return [...ordered, ...rest]
     }
 

@@ -9,8 +9,11 @@ cloudinary.config({
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'mark2025';
 
-// Predictable Cloudinary raw file URLs
+// Predictable Cloudinary raw file public IDs
 const CONFIG_PUBLIC_ID = (type) => `mark-portfolio/_config/${type}-order`;
+
+// Folders that should never appear as work categories in a saved order
+const CATEGORIES_BLACKLIST = new Set(['home', '_config']);
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -24,13 +27,23 @@ export default async function handler(req, res) {
   // GET — return current order
   if (req.method === 'GET') {
     try {
-      const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
-      const url = `https://res.cloudinary.com/${cloudName}/raw/upload/${CONFIG_PUBLIC_ID(type)}`;
-      const r = await fetch(url);
-      if (!r.ok) return res.status(200).json({ order: [] }); // Not yet saved
+      // Use Admin API to get the versioned URL — avoids CDN cache serving stale data
+      const resource = await cloudinary.api.resource(CONFIG_PUBLIC_ID(type), {
+        resource_type: 'raw',
+      });
+      // secure_url from Admin API always contains the version number (cache buster)
+      const r = await fetch(resource.secure_url);
+      if (!r.ok) return res.status(200).json({ order: [] });
       const data = await r.json();
-      return res.status(200).json(data);
+
+      // Sanitise: remove any blacklisted values that crept into categories order
+      let order = data.order || [];
+      if (type === 'categories') {
+        order = order.filter(o => !CATEGORIES_BLACKLIST.has(o));
+      }
+      return res.status(200).json({ order });
     } catch {
+      // File not yet saved — return empty order (not an error)
       return res.status(200).json({ order: [] });
     }
   }
@@ -42,8 +55,18 @@ export default async function handler(req, res) {
 
     let body = '';
     for await (const chunk of req) body += chunk;
-    const { order } = JSON.parse(body);
+
+    let parsed;
+    try { parsed = JSON.parse(body); }
+    catch { return res.status(400).json({ error: 'Invalid JSON body' }); }
+
+    let { order } = parsed;
     if (!Array.isArray(order)) return res.status(400).json({ error: 'order must be array' });
+
+    // Sanitise before saving
+    if (type === 'categories') {
+      order = order.filter(o => !CATEGORIES_BLACKLIST.has(o));
+    }
 
     try {
       const json = JSON.stringify({ order });
@@ -53,6 +76,7 @@ export default async function handler(req, res) {
             public_id: CONFIG_PUBLIC_ID(type),
             resource_type: 'raw',
             overwrite: true,
+            invalidate: true, // Purge CDN cache after overwrite
           },
           (err, result) => err ? reject(err) : resolve(result)
         );

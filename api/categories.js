@@ -29,11 +29,14 @@ async function getAllFolders() {
       .max_results(500)
       .execute();
 
+    // Folders to never show as work categories
+    const EXCLUDED = new Set(['home', '_config']);
+
     const folderSet = new Set(SEED_CATEGORIES);
     for (const r of result.resources) {
       const parts = r.public_id.split('/');
       // public_id = mark-portfolio/FolderName/filename → parts[1] is the folder
-      if (parts.length >= 3 && parts[0] === 'mark-portfolio') {
+      if (parts.length >= 3 && parts[0] === 'mark-portfolio' && !EXCLUDED.has(parts[1])) {
         folderSet.add(parts[1]);
       }
     }

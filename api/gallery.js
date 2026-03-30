@@ -39,6 +39,19 @@ export default async function handler(req, res) {
       folderMap[folder].push(r.secure_url);
     }
 
+    // Try to fetch custom covers config
+    let coversConfig = {};
+    try {
+      const coversResource = await cloudinary.api.resource('mark-portfolio/_config/covers', { resource_type: 'raw' });
+      const coversRes = await fetch(coversResource.secure_url);
+      if (coversRes.ok) {
+        const data = await coversRes.json();
+        if (data.covers) coversConfig = data.covers;
+      }
+    } catch {
+      // Config not created yet, ignore
+    }
+
     // Build the categories array
     const categories = Object.entries(folderMap)
       .filter(([, images]) => images.length > 0)
@@ -46,7 +59,7 @@ export default async function handler(req, res) {
         id: slugify(name),
         title: name.toUpperCase(),
         folder: name,
-        cover: images[0],
+        cover: coversConfig[name] || images[0],
         images,
       }))
       .sort((a, b) => a.folder.localeCompare(b.folder));

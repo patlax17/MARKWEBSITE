@@ -422,6 +422,8 @@ export default function Admin() {
   const [msg, setMsg]                   = useState('')
   const [aboutText, setAboutText]       = useState('')
   const [savingAbout, setSavingAbout]   = useState(false)
+  const [galleryData, setGalleryData]   = useState([])
+  const [savingCover, setSavingCover]   = useState(null)
 
   const showMsg = (text) => { setMsg(text); setTimeout(() => setMsg(''), 5000) }
 
@@ -450,12 +452,19 @@ export default function Admin() {
     } catch {}
   }
 
+  const loadGallery = async () => {
+    try {
+      const data = await fetch('/api/gallery').then(r => r.json())
+      setGalleryData(data)
+    } catch {}
+  }
+
   const handleLogin = async (e) => {
     e.preventDefault()
     const res = await fetch('/api/categories', { headers: { 'x-admin-password': password } })
     if (res.status === 401) { setAuthError(true); return }
     setAuthenticated(true); setAuthError(false)
-    await Promise.all([loadCategories(password), loadCatOrder(), loadAboutText()])
+    await Promise.all([loadCategories(password), loadCatOrder(), loadAboutText(), loadGallery()])
   }
 
   const saveAboutText = async () => {
@@ -469,6 +478,25 @@ export default function Admin() {
       showMsg('✓ About text saved! It is now live.')
     } catch { showMsg('✗ Failed to save about text.') }
     setSavingAbout(false)
+  }
+
+  const saveCover = async (folder, url) => {
+    setSavingCover(url)
+    // Optimistic UI update
+    setGalleryData(prev => prev.map(c => c.folder === folder ? { ...c, cover: url } : c))
+    try {
+      const res = await fetch('/api/covers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-password': password },
+        body: JSON.stringify({ folder, url }),
+      })
+      if (!res.ok) throw new Error()
+      showMsg(`✓ Cover set for "${folder}"!`)
+    } catch {
+      showMsg('✗ Failed to set cover.')
+      loadGallery() // Revert on failure
+    }
+    setSavingCover(null)
   }
 
   const saveCatOrder = async (order) => {
@@ -556,7 +584,7 @@ export default function Admin() {
 
         {/* Main Tabs — always visible */}
         <div className="flex flex-wrap gap-6 mb-12 border-b border-gray-100">
-          {[['upload','Work: Upload'],['categories','Work: Categories'],['work-reorder','Work: Reorder'],['home','Home Page Photos'],['about-text','About Page']].map(([key,label])=>(
+          {[['upload','Work: Upload'],['categories','Work: Categories'],['work-reorder','Work: Reorder'],['work-covers','Work: Covers'],['home','Home Page Photos'],['about-text','About Page']].map(([key,label])=>(
             <button key={key} onClick={()=>setTab(key)}
               className={`pb-4 text-[11px] font-light tracking-[0.2em] uppercase transition-colors ${tab===key?'text-black border-b-2 border-black -mb-px':'text-gray-400 hover:text-black'}`}>
               {label}
@@ -639,6 +667,52 @@ export default function Admin() {
                 </div>
               )}
             />
+          </div>
+        )}
+
+        {/* ── Work Covers ── */}
+        {tab==='work-covers' && (
+          <div className="space-y-8 mt-8">
+            <p className="text-[12px] font-light text-gray-400">Pick a category, then click any image to set it as the cover displaying on the /work grid.</p>
+            <div>
+              <label className="block text-[10px] font-light tracking-[0.2em] uppercase text-gray-400 mb-2">Category</label>
+              <select value={selectedFolder} onChange={e=>setSelectedFolder(e.target.value)}
+                className="w-full border border-gray-200 px-4 py-3 text-[13px] font-light outline-none focus:border-black appearance-none bg-white">
+                {(categories.length > 0 ? categories : SEED_CATEGORIES).map(cat=>(
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </div>
+            
+            {selectedFolder && galleryData.find(c => c.folder === selectedFolder) && (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {galleryData.find(c => c.folder === selectedFolder).images.map((url, i) => {
+                  const isCover = galleryData.find(c => c.folder === selectedFolder).cover === url;
+                  return (
+                    <div 
+                      key={i} 
+                      onClick={() => saveCover(selectedFolder, url)}
+                      className={`relative cursor-pointer group aspect-square ${isCover ? 'ring-2 ring-black' : 'hover:opacity-75 transition-opacity'}`}
+                    >
+                      <img src={url} alt="Cover option" className="w-full h-full object-cover" />
+                      {isCover && (
+                        <div className="absolute top-2 left-2 bg-black text-white text-[9px] font-light tracking-widest uppercase px-2 py-1">
+                          Cover
+                        </div>
+                      )}
+                      {savingCover === url && (
+                        <div className="absolute inset-0 bg-white/50 flex items-center justify-center">
+                          <span className="text-[10px] font-medium uppercase tracking-widest text-black">Saving…</span>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+            {selectedFolder && !galleryData.find(c => c.folder === selectedFolder) && (
+              <p className="text-[12px] font-light text-gray-400">Loading images or folder is empty...</p>
+            )}
           </div>
         )}
 

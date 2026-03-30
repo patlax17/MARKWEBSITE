@@ -11,7 +11,7 @@ const SEED_CATEGORIES = [
   "Staten Island Hoops",
 ]
 
-// ─── Drag-to-reorder list ──────────────────────────────────────────────────────
+// ─── Drag-to-reorder list (for categories) ────────────────────────────────────
 
 function SortableList({ items, renderItem, onReorder }) {
   const dragIndex = useRef(null)
@@ -47,6 +47,68 @@ function SortableList({ items, renderItem, onReorder }) {
     </ul>
   )
 }
+
+// ─── Masonry drag-to-reorder (for home page photos) ──────────────────────────
+
+function MasonryReorder({ images, onReorder }) {
+  const dragIndex = useRef(null)
+  const [list, setList] = useState(images)
+
+  useEffect(() => setList(images), [images])
+
+  const handleDragStart = (e, i) => {
+    dragIndex.current = i
+    e.dataTransfer.effectAllowed = 'move'
+  }
+
+  const handleDragOver = (e, i) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    if (dragIndex.current === null || dragIndex.current === i) return
+    const next = [...list]
+    const [moved] = next.splice(dragIndex.current, 1)
+    next.splice(i, 0, moved)
+    dragIndex.current = i
+    setList(next)
+  }
+
+  const handleDrop = (e) => {
+    e.preventDefault()
+    onReorder(list)
+    dragIndex.current = null
+  }
+
+  return (
+    <div style={{ columnCount: 3, columnGap: '6px' }}>
+      {list.map((img, i) => (
+        <div
+          key={img.publicId}
+          draggable
+          onDragStart={(e) => handleDragStart(e, i)}
+          onDragOver={(e) => handleDragOver(e, i)}
+          onDrop={handleDrop}
+          style={{ breakInside: 'avoid', marginBottom: '6px', position: 'relative', cursor: 'grab' }}
+          className="group select-none"
+        >
+          <img
+            src={img.url}
+            alt={img.filename}
+            style={{ width: '100%', height: 'auto', display: 'block' }}
+            draggable={false}
+          />
+          {/* Drag handle overlay — shows position number + drag icon */}
+          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all flex flex-col items-center justify-center opacity-0 group-hover:opacity-100">
+            <span style={{ fontSize: '24px', color: 'white', lineHeight: 1 }}>⠿</span>
+            <span style={{ fontSize: '11px', fontWeight: 300, color: 'white', letterSpacing: '0.15em', marginTop: '4px' }}>
+              #{i + 1}
+            </span>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 
 // ─── Work Upload Zone ──────────────────────────────────────────────────────────
 
@@ -260,26 +322,19 @@ function HomePhotosTab({ password, showMsg }) {
       {/* Reorder */}
       {subTab==='reorder' && (
         <div className="space-y-4">
-          <p className="text-[11px] font-light text-gray-400">Drag photos to change their order on the home page. Saves automatically.</p>
-          {savingOrder && <p className="text-[11px] font-light text-blue-500">Saving…</p>}
+          <p className="text-[11px] font-light text-gray-400">
+            Drag photos in the grid below to change their order on the home page. Hover any photo to see the drag handle. Saves automatically on drop.
+          </p>
+          {savingOrder && (
+            <p className="text-[11px] font-light text-blue-500 tracking-wide">Saving order…</p>
+          )}
           {loading
-            ? <p className="text-[11px] font-light text-gray-400">Loading…</p>
-            : (
-              <SortableList
-                items={homeImages}
-                onReorder={saveHomeOrder}
-                renderItem={(img, i) => (
-                  <div className="flex items-center gap-3 min-w-0">
-                    <span className="text-[10px] font-light text-gray-300 w-5 shrink-0">{i+1}</span>
-                    <img src={img.url} alt="" className="w-10 h-10 object-cover shrink-0" />
-                    <span className="text-[12px] font-light text-gray-600 truncate">{img.filename}</span>
-                  </div>
-                )}
-              />
-            )
+            ? <p className="text-[11px] font-light text-gray-400">Loading photos…</p>
+            : <MasonryReorder images={homeImages} onReorder={saveHomeOrder} />
           }
         </div>
       )}
+
     </div>
   )
 }
@@ -404,7 +459,7 @@ export default function Admin() {
 
       <main className="pt-32 px-6 md:px-10 pb-20 max-w-2xl mx-auto">
 
-        {/* Main Tabs */}
+        {/* Main Tabs — always visible */}
         <div className="flex flex-wrap gap-6 mb-12 border-b border-gray-100">
           {[['upload','Work: Upload'],['categories','Work: Categories'],['work-reorder','Work: Reorder'],['home','Home Page Photos']].map(([key,label])=>(
             <button key={key} onClick={()=>setTab(key)}
@@ -492,12 +547,14 @@ export default function Admin() {
           </div>
         )}
 
-        {/* ── Home Page Photos ── */}
-        {tab==='home' && (
-          <HomePhotosTab password={password} showMsg={showMsg} />
-        )}
-
       </main>
+
+      {/* ── Home Page Photos — full width ── */}
+      {tab==='home' && (
+        <div className="pt-4 px-4 md:px-6 pb-20">
+          <HomePhotosTab password={password} showMsg={showMsg} />
+        </div>
+      )}
 
       {msg && (
         <div className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-black text-white px-8 py-4 text-[12px] font-light tracking-wide z-50 whitespace-nowrap">

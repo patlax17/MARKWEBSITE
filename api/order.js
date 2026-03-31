@@ -26,6 +26,8 @@ export default async function handler(req, res) {
 
   // GET — return current order
   if (req.method === 'GET') {
+    // Cache for 5 minutes; orders don't change often
+    res.setHeader('Cache-Control', 'public, max-age=300, stale-while-revalidate=30');
     try {
       // Use Admin API to get the versioned URL — avoids CDN cache serving stale data
       const resource = await cloudinary.api.resource(CONFIG_PUBLIC_ID(type), {

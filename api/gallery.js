@@ -10,6 +10,15 @@ function slugify(text) {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 }
 
+/**
+ * Inject Cloudinary transformations into a URL.
+ * `size` = max width in px (e.g. 800 for thumbnails, 1400 for full images)
+ */
+function optimizeUrl(url, size = 1400) {
+  if (!url || !url.includes('/upload/')) return url;
+  return url.replace('/upload/', `/upload/f_auto,q_auto,w_${size}/`);
+}
+
 // Cloudinary free plan doesn't support sub_folders() — we use the Search API instead
 // These folders live under mark-portfolio/ but are NOT work categories
 const EXCLUDED_FOLDERS = new Set(['home', '_config']);
@@ -17,6 +26,9 @@ const EXCLUDED_FOLDERS = new Set(['home', '_config']);
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
+
+  // Cache at CDN/browser: 5 min fresh, 30s stale-while-revalidate
+  res.setHeader('Cache-Control', 'public, max-age=300, stale-while-revalidate=30');
 
   try {
     // Search ALL resources under mark-portfolio/ (free-plan-safe)
@@ -75,8 +87,8 @@ export default async function handler(req, res) {
         id: slugify(name),
         title: name.toUpperCase(),
         folder: name,
-        cover: coversConfig[name] || images[0],
-        images: applyOrder(images, workOrderConfig[name] || []),
+        cover: optimizeUrl(coversConfig[name] || images[0], 800),
+        images: applyOrder(images, workOrderConfig[name] || []).map(url => optimizeUrl(url, 1400)),
       }))
       .sort((a, b) => a.folder.localeCompare(b.folder));
 

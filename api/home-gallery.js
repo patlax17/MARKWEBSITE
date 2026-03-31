@@ -9,6 +9,16 @@ cloudinary.config({
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'mark2025';
 
+/**
+ * Inject Cloudinary auto-format + auto-quality + width cap into any secure URL.
+ * e.g. .../upload/v1/... → .../upload/f_auto,q_auto,w_1200/v1/...
+ * This serves WebP/AVIF to browsers that support it and compresses smartly.
+ */
+function optimizeUrl(url) {
+  if (!url || !url.includes('/upload/')) return url;
+  return url.replace('/upload/', '/upload/f_auto,q_auto,w_1200/');
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
@@ -17,6 +27,8 @@ export default async function handler(req, res) {
 
   // GET — list all home images
   if (req.method === 'GET') {
+    // Cache at CDN/browser for 5 minutes (stale-while-revalidate for 30s)
+    res.setHeader('Cache-Control', 'public, max-age=300, stale-while-revalidate=30');
     try {
       const result = await cloudinary.search
         .expression('public_id:mark-portfolio/home/* AND resource_type:image')
@@ -25,7 +37,7 @@ export default async function handler(req, res) {
         .execute();
 
       const images = result.resources.map(r => ({
-        url: r.secure_url,
+        url: optimizeUrl(r.secure_url),
         publicId: r.public_id,
         filename: r.public_id.split('/').pop(),
       }));

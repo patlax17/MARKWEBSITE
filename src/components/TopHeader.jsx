@@ -31,13 +31,10 @@ export default function TopHeader() {
     <>
       {/* ── Desktop Header ── */}
       <header className="hidden md:flex fixed top-0 left-0 right-0 z-50 bg-white items-center justify-between px-10 py-6">
-        
+
         {/* Left — Name */}
-        <NavLink
-          to="/"
-          className="text-xs font-light tracking-[0.2em] uppercase text-black hover:opacity-40 transition-opacity whitespace-nowrap cursor-pointer"
-        >
-          Mark Militar | MarkShotThis
+        <NavLink to="/" className="block hover:opacity-40 transition-opacity cursor-pointer">
+          <img src="/logo-black.png" alt="MarkShotThis logo" className="h-8 w-auto" />
         </NavLink>
 
         {/* Center — Nav */}
@@ -111,12 +108,8 @@ export default function TopHeader() {
 
       {/* ── Mobile Header ── */}
       <header className="md:hidden fixed top-0 left-0 right-0 z-50 bg-white flex items-center justify-between px-6 py-5">
-        <NavLink
-          to="/"
-          className="text-[11px] font-light tracking-widest uppercase text-black cursor-pointer"
-          onClick={() => setMenuOpen(false)}
-        >
-          Mark Militar | MarkShotThis
+        <NavLink to="/" className="block hover:opacity-40 transition-opacity cursor-pointer" onClick={() => setMenuOpen(false)}>
+          <img src="/logo-black.png" alt="MarkShotThis logo" className="h-7 w-auto" />
         </NavLink>
         <button
           onClick={() => setMenuOpen(!menuOpen)}
@@ -158,7 +151,7 @@ export default function TopHeader() {
           >
             Contact
           </NavLink>
-          
+
           <div className="flex items-center gap-8 mt-4">
             <a href="https://www.instagram.com/markshotthis/" target="_blank" rel="noreferrer" className="text-black hover:opacity-40">
               <InstagramIcon />

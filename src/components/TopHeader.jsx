@@ -30,15 +30,18 @@ export default function TopHeader() {
   return (
     <>
       {/* ── Desktop Header ── */}
-      <header className="hidden md:flex fixed top-0 left-0 right-0 z-50 bg-white items-center justify-between px-10 py-6">
+      <header className="hidden md:flex fixed top-0 left-0 right-0 z-50 bg-white items-center justify-between px-10 py-5">
 
-        {/* Left — Name */}
-        <NavLink to="/" className="block hover:opacity-40 transition-opacity cursor-pointer">
-          <img src="/logo-black.png" alt="MarkShotThis logo" className="h-8 w-auto" />
+        {/* Left — Brand text */}
+        <NavLink
+          to="/"
+          className="text-xs font-light tracking-[0.2em] uppercase text-black hover:opacity-40 transition-opacity whitespace-nowrap cursor-pointer"
+        >
+          Mark Militar | MarkShotThis
         </NavLink>
 
-        {/* Center — Nav */}
-        <nav className="flex items-center gap-12">
+        {/* Center — Nav with logo embedded between Work and About */}
+        <nav className="flex items-center gap-10">
           <NavLink
             to="/"
             end
@@ -56,6 +59,12 @@ export default function TopHeader() {
           >
             Work
           </NavLink>
+
+          {/* MST Logo — center of nav */}
+          <NavLink to="/" className="hover:opacity-40 transition-opacity">
+            <img src="/logo-black.png" alt="MST logo" className="h-7 w-auto" />
+          </NavLink>
+
           <NavLink
             to="/about"
             className={({ isActive }) =>
@@ -74,7 +83,7 @@ export default function TopHeader() {
           </NavLink>
         </nav>
 
-        {/* Right — Social Icons (Using direct SVGs for deployment stability) */}
+        {/* Right — Social Icons */}
         <div className="flex items-center gap-6">
           <a
             href="https://www.instagram.com/markshotthis/"
